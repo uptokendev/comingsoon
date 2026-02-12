@@ -4,7 +4,23 @@ import { SpaceBackground } from '../components/SpaceBackground'
 const X_URL = (import.meta.env.VITE_X_URL as string) || 'https://x.com/'
 const TG_URL = (import.meta.env.VITE_TELEGRAM_URL as string) || 'https://t.me/'
 const DC_URL = (import.meta.env.VITE_DISCORD_URL as string) || 'https://discord.gg/T7Sp6nSM'
+const DOCS_URL = (import.meta.env.VITE_DOCS_URL as string) || 'https://docs.memebattles.gg'
 const STATUS = (import.meta.env.VITE_STATUS_TEXT as string) || ''
+
+function IconDocs() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M6.5 4.5H18c.83 0 1.5.67 1.5 1.5v14c0 .83-.67 1.5-1.5 1.5H6.5A2.5 2.5 0 0 1 4 19V7A2.5 2.5 0 0 1 6.5 4.5Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path d="M7 8h9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M7 12h9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M7 16h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
 
 function IconX() {
   return (
@@ -67,6 +83,7 @@ export default function ComingSoon() {
             <SocialButton href={X_URL} label="Follow on X" icon={<IconX />} />
             <SocialButton href={TG_URL} label="Join Telegram" icon={<IconTelegram />} />
             <SocialButton href={DC_URL} label="Join Discord" icon={<IconDiscord />} />
+            <SocialButton href={DOCS_URL} label="Docs" icon={<IconDocs />} />
           </div>
 
           <div className="cards">
