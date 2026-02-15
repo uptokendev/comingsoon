@@ -1,7 +1,7 @@
 import SocialButton from '../components/SocialButton'
 import { SpaceBackground } from '../components/SpaceBackground'
 
-const X_URL = (import.meta.env.VITE_X_URL as string) || 'https://x.com/'
+const X_URL = (import.meta.env.VITE_X_URL as string) || 'https://x.com/MemeBattles_'
 const TG_URL = (import.meta.env.VITE_TELEGRAM_URL as string) || 'https://t.me/'
 const DC_URL = (import.meta.env.VITE_DISCORD_URL as string) || 'https://discord.gg/T7Sp6nSM'
 const DOCS_URL = (import.meta.env.VITE_DOCS_URL as string) || 'https://docs.memebattles.gg'
