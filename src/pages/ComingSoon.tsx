@@ -1,7 +1,7 @@
 import SocialButton from '../components/SocialButton'
 import { SpaceBackground } from '../components/SpaceBackground'
 
-const X_URL = (import.meta.env.VITE_X_URL as string) || 'https://x.com/MemeBattles_'
+const X_URL = (import.meta.env.VITE_X_URL as string) || 'https://x.com/MemeWarzoneHQ'
 const TG_URL = (import.meta.env.VITE_TELEGRAM_URL as string) || 'https://t.me/'
 const DC_URL = (import.meta.env.VITE_DISCORD_URL as string) || 'https://discord.gg/T7Sp6nSM'
 const DOCS_URL = (import.meta.env.VITE_DOCS_URL as string) || 'https://docs.memebattles.gg'
@@ -62,7 +62,7 @@ export default function ComingSoon() {
 
       <header className="top">
         <div className="top__brand">
-          <img className="top__logo" src="/logo.png" alt="MemeBattles" />
+          <img className="top__logo" src="/logo.png" alt="MemeWarzone" />
         </div>
         <div className="top__pill">BNB Chain • Launchpad • Leagues</div>
       </header>
@@ -71,7 +71,7 @@ export default function ComingSoon() {
         <section className="hero">
           <div className="badge">⚔️ The arena opens soon</div>
           <h1 className="h1">
-            MemeBattles is
+            MemeWarzone is
             <span className="h1__accent"> coming soon</span>
           </h1>
           <p className="lead">
@@ -104,7 +104,7 @@ export default function ComingSoon() {
       </main>
 
       <footer className="footer">
-        <div className="footer__left">© {new Date().getFullYear()} MemeBattles. All rights reserved.</div>
+        <div className="footer__left">© {new Date().getFullYear()} MemeWarzone. All rights reserved.</div>
         {STATUS ? <div className="footer__right">{STATUS}</div> : null}
       </footer>
     </div>

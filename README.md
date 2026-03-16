@@ -1,6 +1,6 @@
-# MemeBattles — Coming Soon Landing
+# MemeWarzone — Coming Soon Landing
 
-A lightweight Vite + React landing page that matches the MemeBattles dark / fire / gold vibe and includes social buttons (X, Telegram, Discord).
+A lightweight Vite + React landing page that matches the MemeWarzone dark / fire / gold vibe and includes social buttons (X, Telegram, Discord).
 
 ## Quickstart
 
