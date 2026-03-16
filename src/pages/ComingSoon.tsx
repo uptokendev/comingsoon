@@ -58,7 +58,9 @@ function IconDiscord() {
 export default function ComingSoon() {
   return (
     <div className="page">
-      <SpaceBackground particleCount={450} particleColor="rgba(175, 127, 35, 0.8)" backgroundColor="#000" />
+      <div className="page__bg" aria-hidden="true" />
+      <div className="page__overlay" aria-hidden="true" />
+      <SpaceBackground particleCount={220} particleColor="rgba(255, 165, 70, 0.55)" backgroundColor="transparent" className="page__particles" />
 
       <header className="top">
         <div className="top__brand">
