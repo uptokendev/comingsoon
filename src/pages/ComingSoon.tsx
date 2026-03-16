@@ -71,7 +71,7 @@ export default function ComingSoon() {
 
       <main className="main">
         <section className="hero">
-          <div className="badge">⚔️ The arena opens soon</div>
+          <div className="badge">⚔️ The Warzone opens soon</div>
           <h1 className="h1">
             MemeWarzone is
             <span className="h1__accent"> coming soon</span>
@@ -106,7 +106,7 @@ export default function ComingSoon() {
       </main>
 
       <footer className="footer">
-        <div className="footer__left">© {new Date().getFullYear()} MemeWarzone. All rights reserved.</div>
+        <div className="footer__left">© {new Date().getFullYear()} MemeWarzone 2026. All rights reserved.</div>
         {STATUS ? <div className="footer__right">{STATUS}</div> : null}
       </footer>
     </div>
