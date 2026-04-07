@@ -27,11 +27,14 @@ type DashboardResponse = {
     byStatus: Record<string, number>
   }
   rows?: RecruiterRow[]
+  row?: RecruiterRow
 }
 
 const TOKEN_KEY = 'mwz_recruiter_dashboard_token_v1'
+const STATUS_ORDER = ['new', 'reviewing', 'approved', 'rejected'] as const
 
-function formatDate(value: string) {
+function formatDate(value: string | null) {
+  if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   return new Intl.DateTimeFormat(undefined, {
@@ -80,6 +83,9 @@ export default function RecruiterDashboard() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState('')
+  const [actionMessage, setActionMessage] = useState('')
+  const [savingKey, setSavingKey] = useState('')
+  const [noteDrafts, setNoteDrafts] = useState<Record<number, string>>({})
 
   useEffect(() => {
     const stored = window.localStorage.getItem(TOKEN_KEY) || ''
@@ -88,6 +94,23 @@ export default function RecruiterDashboard() {
       setSavedToken(stored)
     }
   }, [])
+
+  useEffect(() => {
+    setNoteDrafts((prev) => {
+      const next = { ...prev }
+      const activeIds = new Set<number>()
+      for (const row of rows) {
+        activeIds.add(row.id)
+        if (typeof next[row.id] !== 'string') {
+          next[row.id] = row.reviewer_notes || ''
+        }
+      }
+      for (const key of Object.keys(next)) {
+        if (!activeIds.has(Number(key))) delete next[Number(key)]
+      }
+      return next
+    })
+  }, [rows])
 
   const fetchRows = async (activeToken: string) => {
     if (!activeToken.trim()) {
@@ -148,6 +171,7 @@ export default function RecruiterDashboard() {
         row.focus,
         row.languages || '',
         row.notes || '',
+        row.reviewer_notes || '',
       ]
         .join(' ')
         .toLowerCase()
@@ -178,9 +202,59 @@ export default function RecruiterDashboard() {
   }
 
   const statusOptions = useMemo(() => {
-    const unique = Array.from(new Set(rows.map((row) => row.status).filter(Boolean)))
-    return ['all', ...unique]
+    const extra = rows
+      .map((row) => row.status)
+      .filter((status): status is string => Boolean(status) && !STATUS_ORDER.includes(status as (typeof STATUS_ORDER)[number]))
+    return ['all', ...STATUS_ORDER, ...Array.from(new Set(extra))]
   }, [rows])
+
+  const replaceRow = (updatedRow: RecruiterRow) => {
+    setRows((prev) => prev.map((row) => (row.id === updatedRow.id ? updatedRow : row)))
+    setNoteDrafts((prev) => ({ ...prev, [updatedRow.id]: updatedRow.reviewer_notes || '' }))
+  }
+
+  const runReviewAction = async (
+    row: RecruiterRow,
+    payload: { status?: string; reviewerNotes?: string | null },
+    successMessage: string,
+  ) => {
+    if (!savedToken.trim()) {
+      setError('Enter the dashboard token to load submissions.')
+      return
+    }
+
+    setSavingKey(`${row.id}:${payload.status || 'notes'}`)
+    setError('')
+    setActionMessage('')
+
+    try {
+      const response = await fetch('/api/recruiter-dashboard', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-dashboard-token': savedToken.trim(),
+        },
+        body: JSON.stringify({
+          id: row.id,
+          ...payload,
+        }),
+      })
+
+      const data = (await response.json().catch(() => ({}))) as DashboardResponse
+      if (!response.ok || !data.ok || !data.row) {
+        throw new Error(data.error || 'Failed to update recruiter submission.')
+      }
+
+      replaceRow(data.row)
+      setActionMessage(successMessage)
+      window.setTimeout(() => setActionMessage(''), 1600)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update recruiter submission.'
+      setError(message)
+    } finally {
+      setSavingKey('')
+    }
+  }
 
   return (
     <div className="dashboard-page">
@@ -189,7 +263,7 @@ export default function RecruiterDashboard() {
           <div>
             <div className="dashboard-kicker">Private reviewer page</div>
             <h1 className="dashboard-title">Recruiter submissions</h1>
-            <p className="dashboard-subtitle">Protected with a server-side token. Read-only for now.</p>
+            <p className="dashboard-subtitle">Protected with a server-side token. You can now review, note, approve, and reject applications here.</p>
           </div>
           <a className="dashboard-back" href="/">
             ← Back to coming soon
@@ -199,7 +273,7 @@ export default function RecruiterDashboard() {
         <div className="dashboard-token-card">
           <div className="dashboard-token-copy">
             <div className="dashboard-token-title">Access token</div>
-            <div className="dashboard-token-text">Enter the reviewer token to load the applicant queue.</div>
+            <div className="dashboard-token-text">Enter the reviewer token to load and manage the applicant queue.</div>
           </div>
           <div className="dashboard-token-form">
             <input
@@ -222,6 +296,7 @@ export default function RecruiterDashboard() {
                   setToken('')
                   setRows([])
                   setError('')
+                  setActionMessage('')
                 }}
               >
                 Clear token
@@ -229,6 +304,7 @@ export default function RecruiterDashboard() {
             ) : null}
           </div>
           {error ? <div className="dashboard-error">{error}</div> : null}
+          {actionMessage ? <div className="dashboard-success">{actionMessage}</div> : null}
         </div>
 
         <div className="dashboard-stats">
@@ -247,6 +323,10 @@ export default function RecruiterDashboard() {
           <div className="dashboard-stat">
             <div className="dashboard-stat__label">Approved</div>
             <div className="dashboard-stat__value">{counts.approved || 0}</div>
+          </div>
+          <div className="dashboard-stat">
+            <div className="dashboard-stat__label">Rejected</div>
+            <div className="dashboard-stat__value">{counts.rejected || 0}</div>
           </div>
         </div>
 
@@ -277,86 +357,150 @@ export default function RecruiterDashboard() {
           {filteredRows.length === 0 ? (
             <div className="dashboard-empty">No submissions match the current filters.</div>
           ) : (
-            filteredRows.map((row) => (
-              <article key={row.id} className="submission-card">
-                <div className="submission-card__top">
-                  <div>
-                    <div className="submission-card__name">{row.name}</div>
-                    <div className="submission-card__meta">
-                      Applied {timeAgo(row.created_at)} • {formatDate(row.created_at)}
+            filteredRows.map((row) => {
+              const noteDraft = noteDrafts[row.id] ?? ''
+              const rowBusy = savingKey.startsWith(`${row.id}:`)
+
+              return (
+                <article key={row.id} className="submission-card">
+                  <div className="submission-card__top">
+                    <div>
+                      <div className="submission-card__name">{row.name}</div>
+                      <div className="submission-card__meta">
+                        Applied {timeAgo(row.created_at)} • {formatDate(row.created_at)}
+                      </div>
+                    </div>
+                    <div className={statusClass(row.status)}>{row.status || 'new'}</div>
+                  </div>
+
+                  <div className="submission-grid">
+                    <div className="submission-item">
+                      <span className="submission-item__label">Email</span>
+                      <div className="submission-item__row">
+                        <a href={`mailto:${row.email}`}>{row.email}</a>
+                        <button type="button" className="mini-btn" onClick={() => void copyValue('Email', row.email)}>
+                          Copy
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="submission-item">
+                      <span className="submission-item__label">Wallet</span>
+                      <div className="submission-item__row submission-item__row--wrap">
+                        <code>{row.wallet_address}</code>
+                        <button type="button" className="mini-btn" onClick={() => void copyValue('Wallet', row.wallet_address)}>
+                          Copy
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="submission-item">
+                      <span className="submission-item__label">X</span>
+                      <div className="submission-item__row">
+                        <a href={`https://x.com/${row.x_handle.replace(/^@+/, '')}`} target="_blank" rel="noreferrer">
+                          @{row.x_handle.replace(/^@+/, '')}
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className="submission-item">
+                      <span className="submission-item__label">Telegram</span>
+                      <div className="submission-item__row">
+                        <a href={`https://t.me/${row.telegram_handle.replace(/^@+/, '')}`} target="_blank" rel="noreferrer">
+                          @{row.telegram_handle.replace(/^@+/, '')}
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className="submission-item">
+                      <span className="submission-item__label">Focus</span>
+                      <div>{row.focus || 'both'}</div>
+                    </div>
+
+                    <div className="submission-item">
+                      <span className="submission-item__label">Country / region</span>
+                      <div>{row.country_region || '—'}</div>
+                    </div>
+
+                    <div className="submission-item">
+                      <span className="submission-item__label">Languages</span>
+                      <div>{row.languages || '—'}</div>
+                    </div>
+
+                    <div className="submission-item">
+                      <span className="submission-item__label">Source</span>
+                      <div>{row.source || 'coming-soon-popup'}</div>
                     </div>
                   </div>
-                  <div className={statusClass(row.status)}>{row.status || 'new'}</div>
-                </div>
 
-                <div className="submission-grid">
-                  <div className="submission-item">
-                    <span className="submission-item__label">Email</span>
-                    <div className="submission-item__row">
-                      <a href={`mailto:${row.email}`}>{row.email}</a>
-                      <button type="button" className="mini-btn" onClick={() => void copyValue('Email', row.email)}>
-                        Copy
+                  {row.notes ? (
+                    <div className="submission-notes">
+                      <div className="submission-item__label">Applicant notes</div>
+                      <div>{row.notes}</div>
+                    </div>
+                  ) : null}
+
+                  <div className="review-panel">
+                    <div className="review-panel__head">
+                      <div>
+                        <div className="submission-item__label">Reviewer notes</div>
+                        <div className="review-panel__meta">Last reviewed: {formatDate(row.reviewed_at)}</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="mini-btn"
+                        disabled={rowBusy}
+                        onClick={() => void runReviewAction(row, { reviewerNotes: noteDraft }, 'Reviewer notes saved.')}
+                      >
+                        {savingKey === `${row.id}:notes` ? 'Saving...' : 'Save notes'}
+                      </button>
+                    </div>
+
+                    <textarea
+                      className="dashboard-textarea"
+                      value={noteDraft}
+                      onChange={(e) => setNoteDrafts((prev) => ({ ...prev, [row.id]: e.target.value }))}
+                      placeholder="Internal notes, fit check, region, creator quality, follow-up steps..."
+                    />
+
+                    <div className="review-actions">
+                      <button
+                        type="button"
+                        className="dashboard-btn dashboard-btn--ghost"
+                        disabled={rowBusy}
+                        onClick={() => void runReviewAction(row, { status: 'new', reviewerNotes: noteDraft }, 'Application moved back to new.')}
+                      >
+                        Reset to new
+                      </button>
+                      <button
+                        type="button"
+                        className="dashboard-btn dashboard-btn--ghost"
+                        disabled={rowBusy}
+                        onClick={() => void runReviewAction(row, { status: 'reviewing', reviewerNotes: noteDraft }, 'Application marked as reviewing.')}
+                      >
+                        {savingKey === `${row.id}:reviewing` ? 'Saving...' : 'Mark reviewing'}
+                      </button>
+                      <button
+                        type="button"
+                        className="dashboard-btn dashboard-btn--success"
+                        disabled={rowBusy}
+                        onClick={() => void runReviewAction(row, { status: 'approved', reviewerNotes: noteDraft }, 'Application approved.')}
+                      >
+                        {savingKey === `${row.id}:approved` ? 'Saving...' : 'Approve'}
+                      </button>
+                      <button
+                        type="button"
+                        className="dashboard-btn dashboard-btn--danger"
+                        disabled={rowBusy}
+                        onClick={() => void runReviewAction(row, { status: 'rejected', reviewerNotes: noteDraft }, 'Application rejected.')}
+                      >
+                        {savingKey === `${row.id}:rejected` ? 'Saving...' : 'Reject'}
                       </button>
                     </div>
                   </div>
-
-                  <div className="submission-item">
-                    <span className="submission-item__label">Wallet</span>
-                    <div className="submission-item__row submission-item__row--wrap">
-                      <code>{row.wallet_address}</code>
-                      <button type="button" className="mini-btn" onClick={() => void copyValue('Wallet', row.wallet_address)}>
-                        Copy
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="submission-item">
-                    <span className="submission-item__label">X</span>
-                    <div className="submission-item__row">
-                      <a href={`https://x.com/${row.x_handle.replace(/^@+/, '')}`} target="_blank" rel="noreferrer">
-                        @{row.x_handle.replace(/^@+/, '')}
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="submission-item">
-                    <span className="submission-item__label">Telegram</span>
-                    <div className="submission-item__row">
-                      <a href={`https://t.me/${row.telegram_handle.replace(/^@+/, '')}`} target="_blank" rel="noreferrer">
-                        @{row.telegram_handle.replace(/^@+/, '')}
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="submission-item">
-                    <span className="submission-item__label">Focus</span>
-                    <div>{row.focus || 'both'}</div>
-                  </div>
-
-                  <div className="submission-item">
-                    <span className="submission-item__label">Country / region</span>
-                    <div>{row.country_region || '—'}</div>
-                  </div>
-
-                  <div className="submission-item">
-                    <span className="submission-item__label">Languages</span>
-                    <div>{row.languages || '—'}</div>
-                  </div>
-
-                  <div className="submission-item">
-                    <span className="submission-item__label">Source</span>
-                    <div>{row.source || 'coming-soon-popup'}</div>
-                  </div>
-                </div>
-
-                {row.notes ? (
-                  <div className="submission-notes">
-                    <div className="submission-item__label">Notes</div>
-                    <div>{row.notes}</div>
-                  </div>
-                ) : null}
-              </article>
-            ))
+                </article>
+              )
+            })
           )}
         </div>
       </div>

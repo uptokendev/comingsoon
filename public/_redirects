@@ -1,2 +1,3 @@
-/api/*    /.netlify/functions/:splat   200
-/*        /index.html                  200
+/api/recruiter-dashboard   /.netlify/functions/recruiter-dashboard   200
+/api/recruiter-waitlist    /.netlify/functions/recruiter-waitlist    200
+/*                         /index.html                                200
