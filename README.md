@@ -5,7 +5,7 @@ A lightweight Vite + React landing page that matches the MemeWarzone dark / fire
 - early recruiter onboarding popup
 - hero fallback CTA for the same recruiter form
 - bottom cookie / storage consent bar
-- Vercel API route that writes recruiter applications into Supabase
+- Netlify Functions that write recruiter applications into Supabase
 
 ## Quickstart
 
@@ -28,13 +28,13 @@ Edit `.env`:
 ## Recruiter database setup
 
 1. Run `db/recruiter_waitlist.sql` in Supabase SQL editor.
-2. Set these project env vars in Vercel:
+2. Set these site env vars in Netlify:
    - `SUPABASE_URL`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `RECRUITER_TABLE` (optional, defaults to `recruiter_waitlist`)
 3. Deploy.
 
-The form posts to `/api/recruiter-waitlist`, validates the core fields, and inserts a row into Supabase using the service role key on the server only.
+The form posts to `/api/recruiter-waitlist`, which Netlify rewrites to `/.netlify/functions/recruiter-waitlist`. The function validates the core fields and inserts a row into Supabase using the service role key on the server only.
 
 ## Current recruiter fields
 
@@ -77,12 +77,18 @@ Optional analytics are not loaded unless the visitor accepts them.
 - Favicon: `public/favicon.ico`
 - OpenGraph image: `public/og.png`
 
-## Deploy to Vercel
+## Deploy to Netlify
 
 - Build command: `npm run build`
-- Output directory: `dist`
+- Publish directory: `dist`
+- Functions directory: `netlify/functions`
 
-For SPA routing on Vercel, `vercel.json` already rewrites all routes to `/`.
+This repo now includes both `netlify.toml` and `public/_redirects` so two things work on Netlify:
+
+- `/hq/recruiters` loads correctly as a React SPA route
+- `/api/*` is internally rewritten to the matching Netlify Function
+
+For local testing with functions, use `netlify dev` rather than plain `vite` so the function routes are available.
 
 
 ## Recruiter reviewer dashboard
@@ -97,7 +103,7 @@ How it works:
 
 - open `/hq/recruiters`
 - enter the token
-- the page loads submissions from Supabase through the protected `/api/recruiter-dashboard` route
+- the page loads submissions from Supabase through the protected `/api/recruiter-dashboard` route, which Netlify rewrites to `/.netlify/functions/recruiter-dashboard`
 
 Notes:
 
