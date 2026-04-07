@@ -83,3 +83,24 @@ Optional analytics are not loaded unless the visitor accepts them.
 - Output directory: `dist`
 
 For SPA routing on Vercel, `vercel.json` already rewrites all routes to `/`.
+
+
+## Recruiter reviewer dashboard
+
+A small protected reviewer page is available at `/hq/recruiters`.
+
+Set this server-side env var:
+
+- `RECRUITER_DASHBOARD_TOKEN`
+
+How it works:
+
+- open `/hq/recruiters`
+- enter the token
+- the page loads submissions from Supabase through the protected `/api/recruiter-dashboard` route
+
+Notes:
+
+- the page is read-only
+- the token is validated server-side
+- the browser stores the token locally for convenience until you clear it
