@@ -1,6 +1,11 @@
 # MemeWarzone — Coming Soon Landing
 
-A lightweight Vite + React landing page that matches the MemeWarzone dark / fire / gold vibe and includes social buttons (X, Telegram, Discord).
+A lightweight Vite + React landing page that matches the MemeWarzone dark / fire / gold vibe and now includes:
+
+- early recruiter onboarding popup
+- hero fallback CTA for the same recruiter form
+- bottom cookie / storage consent bar
+- Vercel API route that writes recruiter applications into Supabase
 
 ## Quickstart
 
@@ -17,10 +22,58 @@ Edit `.env`:
 - `VITE_X_URL`
 - `VITE_TELEGRAM_URL`
 - `VITE_DISCORD_URL`
+- `VITE_DOCS_URL`
+- `VITE_STATUS_TEXT`
+
+## Recruiter database setup
+
+1. Run `db/recruiter_waitlist.sql` in Supabase SQL editor.
+2. Set these project env vars in Vercel:
+   - `SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `RECRUITER_TABLE` (optional, defaults to `recruiter_waitlist`)
+3. Deploy.
+
+The form posts to `/api/recruiter-waitlist`, validates the core fields, and inserts a row into Supabase using the service role key on the server only.
+
+## Current recruiter fields
+
+Required:
+
+- Name
+- X handle
+- Telegram handle
+- Main BNB wallet address
+- Email
+- Contact / review consent checkbox
+
+Optional:
+
+- Focus (creators, traders, or both)
+- Country / region
+- Languages
+- Short note
+
+## Popup behavior
+
+- opens automatically on first visit
+- if dismissed, it stays hidden for 7 days
+- if submitted successfully, it stops showing
+- hero CTA can reopen it anytime
+
+## Cookie / storage behavior
+
+The site currently stores:
+
+- popup dismissal state
+- recruiter form draft state
+- cookie / storage preference state
+
+Optional analytics are not loaded unless the visitor accepts them.
 
 ## Swap branding assets
 
-- Logo: `public/logo.svg`
+- Logo: `public/logo.png`
 - Favicon: `public/favicon.ico`
 - OpenGraph image: `public/og.png`
 
@@ -30,3 +83,24 @@ Edit `.env`:
 - Output directory: `dist`
 
 For SPA routing on Vercel, `vercel.json` already rewrites all routes to `/`.
+
+
+## Recruiter reviewer dashboard
+
+A small protected reviewer page is available at `/hq/recruiters`.
+
+Set this server-side env var:
+
+- `RECRUITER_DASHBOARD_TOKEN`
+
+How it works:
+
+- open `/hq/recruiters`
+- enter the token
+- the page loads submissions from Supabase through the protected `/api/recruiter-dashboard` route
+
+Notes:
+
+- the page is read-only
+- the token is validated server-side
+- the browser stores the token locally for convenience until you clear it

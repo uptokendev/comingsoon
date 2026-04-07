@@ -1,3 +1,6 @@
+import { useState } from 'react'
+import { CookieBar } from '../components/CookieBar'
+import { RecruiterModal } from '../components/RecruiterModal'
 import SocialButton from '../components/SocialButton'
 import { SpaceBackground } from '../components/SpaceBackground'
 
@@ -56,11 +59,15 @@ function IconDiscord() {
 }
 
 export default function ComingSoon() {
+  const [recruiterModalOpen, setRecruiterModalOpen] = useState(false)
+
   return (
     <div className="page">
       <div className="page__bg" aria-hidden="true" />
       <div className="page__overlay" aria-hidden="true" />
       <SpaceBackground particleCount={220} particleColor="rgba(255, 165, 70, 0.55)" backgroundColor="transparent" className="page__particles" />
+
+      <RecruiterModal forcedOpen={recruiterModalOpen} onCloseForced={() => setRecruiterModalOpen(false)} />
 
       <header className="top">
         <div className="top__brand">
@@ -80,6 +87,16 @@ export default function ComingSoon() {
             A creator-first meme launchpad where every launch becomes a competition — UpVotes drive discovery and on-chain
             leagues turn launches into repeatable events.
           </p>
+
+          <div className="hero-callout">
+            <div className="hero-callout__title">Recruiters wanted</div>
+            <div className="hero-callout__text">
+              Early Recruiters get priority onboarding so they can start building their squad before the warzone fully opens.
+            </div>
+            <button type="button" className="hero-callout__button" onClick={() => setRecruiterModalOpen(true)}>
+              Apply as Recruiter
+            </button>
+          </div>
 
           <div className="cta">
             <SocialButton href={X_URL} label="Follow on X" icon={<IconX />} />
@@ -109,6 +126,8 @@ export default function ComingSoon() {
         <div className="footer__left">© {new Date().getFullYear()} MemeWarzone 2026. All rights reserved.</div>
         {STATUS ? <div className="footer__right">{STATUS}</div> : null}
       </footer>
+
+      <CookieBar />
     </div>
   )
 }
