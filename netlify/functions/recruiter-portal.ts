@@ -1,7 +1,7 @@
 import { readRecruiterAuth, unauthorized } from './_lib/auth'
 import { json, normalizeCode, readBody } from './_lib/http'
 import { ensureRecruiterCode } from './_lib/recruiters'
-import { getSupabaseConfig, supabaseGet, supabasePatch } from './_lib/supabase'
+import { supabaseGet, supabasePatch } from './_lib/supabase'
 
 type RecruiterRecord = {
   id: number
@@ -26,7 +26,7 @@ type SquadRow = {
 }
 
 async function getRecruiter(recruiterId: number) {
-  const { RECRUITER_TABLE } = getSupabaseConfig()
+  const RECRUITER_TABLE = process.env.RECRUITER_TABLE || 'recruiter_waitlist'
   const rows = await supabaseGet<RecruiterRecord[]>(`/rest/v1/${RECRUITER_TABLE}?select=id,name,x_handle,telegram_handle,wallet_address,status,focus,recruiter_code,created_at,approved_at&id=eq.${recruiterId}&limit=1`)
   return rows[0] || null
 }
@@ -83,7 +83,7 @@ export const handler = async (event: any) => {
       const checked = validateCode(String(body.code || ''))
       if (checked.error) return json(400, { error: checked.error })
 
-      const { RECRUITER_TABLE } = getSupabaseConfig()
+      const RECRUITER_TABLE = process.env.RECRUITER_TABLE || 'recruiter_waitlist'
       const existing = await supabaseGet<{ id: number }[]>(`/rest/v1/${RECRUITER_TABLE}?select=id&recruiter_code=ilike.${encodeURIComponent(checked.code)}&limit=1`)
       if (existing[0] && existing[0].id !== recruiter.id) {
         return json(409, { error: 'That code is already taken.' })

@@ -331,7 +331,7 @@ const handler = async (event) => {
     if (!['GET', 'PATCH', 'POST'].includes(event.httpMethod)) {
         return (0, http_1.json)(405, { error: 'Method not allowed.' });
     }
-    const { RECRUITER_TABLE } = (0, supabase_1.getSupabaseConfig)();
+    const RECRUITER_TABLE = process.env.RECRUITER_TABLE || 'recruiter_waitlist';
     const DASHBOARD_TOKEN = process.env.RECRUITER_DASHBOARD_TOKEN || process.env.DIAGNOSTICS_TOKEN || '';
     if (!DASHBOARD_TOKEN) {
         return (0, http_1.json)(500, { error: 'Dashboard token is not configured yet.' });

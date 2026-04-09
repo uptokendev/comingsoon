@@ -1,5 +1,5 @@
 import { json, readBody } from './_lib/http'
-import { getSupabaseConfig, supabaseGet, supabasePatch } from './_lib/supabase'
+import { supabaseGet, supabasePatch } from './_lib/supabase'
 
 type RecruiterRow = {
   id: number
@@ -420,7 +420,7 @@ export const handler = async (event: any) => {
     return json(405, { error: 'Method not allowed.' })
   }
 
-  const { RECRUITER_TABLE } = getSupabaseConfig()
+  const RECRUITER_TABLE = process.env.RECRUITER_TABLE || 'recruiter_waitlist'
   const DASHBOARD_TOKEN = process.env.RECRUITER_DASHBOARD_TOKEN || process.env.DIAGNOSTICS_TOKEN || ''
 
   if (!DASHBOARD_TOKEN) {

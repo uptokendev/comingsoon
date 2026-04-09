@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import { normalizeCode } from './http'
-import { getSupabaseConfig, supabaseGet, supabasePatch } from './supabase'
+import { supabaseGet, supabasePatch } from './supabase'
 
 export type RecruiterRecord = {
   id: number
@@ -24,13 +24,13 @@ export function makeRecruiterCodeSeed(record: Pick<RecruiterRecord, 'name' | 'x_
 }
 
 export async function findRecruiterByWallet(address: string) {
-  const { RECRUITER_TABLE } = getSupabaseConfig()
+  const RECRUITER_TABLE = process.env.RECRUITER_TABLE || 'recruiter_waitlist'
   const rows = await supabaseGet<RecruiterRecord[]>(`/rest/v1/${RECRUITER_TABLE}?select=id,name,x_handle,telegram_handle,wallet_address,status,recruiter_code,focus,created_at,approved_at&wallet_address=ilike.${encodeURIComponent(address)}&limit=1`)
   return rows[0] || null
 }
 
 export async function findRecruiterByCode(code: string) {
-  const { RECRUITER_TABLE } = getSupabaseConfig()
+  const RECRUITER_TABLE = process.env.RECRUITER_TABLE || 'recruiter_waitlist'
   const rows = await supabaseGet<RecruiterRecord[]>(`/rest/v1/${RECRUITER_TABLE}?select=id,name,x_handle,telegram_handle,wallet_address,status,recruiter_code,focus,created_at,approved_at&recruiter_code=ilike.${encodeURIComponent(code)}&limit=1`)
   return rows[0] || null
 }
@@ -38,7 +38,7 @@ export async function findRecruiterByCode(code: string) {
 export async function ensureRecruiterCode(record: RecruiterRecord) {
   if (record.recruiter_code) return normalizeCode(record.recruiter_code)
 
-  const { RECRUITER_TABLE } = getSupabaseConfig()
+  const RECRUITER_TABLE = process.env.RECRUITER_TABLE || 'recruiter_waitlist'
   const seed = makeRecruiterCodeSeed(record)
   const candidates = [seed]
   for (let i = 0; i < 10; i += 1) {

@@ -1,7 +1,7 @@
 import { createRecruiterAuthCookie, recruiterLoginMessage, verifyWalletSignature } from './_lib/auth'
 import { json, normalizeAddress, readBody } from './_lib/http'
 import { ensureRecruiterCode, findRecruiterByWallet } from './_lib/recruiters'
-import { getSupabaseConfig, supabaseGet, supabasePatch } from './_lib/supabase'
+import { supabaseGet, supabasePatch } from './_lib/supabase'
 
 type VerifyBody = {
   address?: string
@@ -40,7 +40,7 @@ export const handler = async (event: any) => {
     }
 
     const recruiterCode = await ensureRecruiterCode(recruiter)
-    const { RECRUITER_TABLE } = getSupabaseConfig()
+    const RECRUITER_TABLE = process.env.RECRUITER_TABLE || 'recruiter_waitlist'
 
     await Promise.all([
       supabasePatch(`/rest/v1/wallet_nonces?id=eq.${nonceRow.id}`, { used_at: new Date().toISOString() }),
