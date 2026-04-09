@@ -23,6 +23,20 @@ type RecruiterRow = {
   approval_email_last_error?: string | null
   approval_email_last_attempt_at?: string | null
   approval_email_send_count?: number | null
+  recruiter_last_login_at?: string | null
+  squad?: {
+    counts: {
+      total: number
+      creators: number
+      traders: number
+      unknown: number
+    }
+    members: Array<{
+      wallet_address: string
+      role: string
+      bound_at: string
+    }>
+  }
 }
 
 type DashboardResponse = {
@@ -68,6 +82,10 @@ function timeAgo(value: string) {
   if (diffDay < 30) return `${diffDay}d ago`
   const diffMonth = Math.round(diffDay / 30)
   return `${diffMonth}mo ago`
+}
+
+function shortenWallet(value: string) {
+  return value ? `${value.slice(0, 6)}...${value.slice(-4)}` : '—'
 }
 
 function statusClass(status: string) {
@@ -181,6 +199,8 @@ export default function RecruiterDashboard() {
         row.languages || '',
         row.notes || '',
         row.reviewer_notes || '',
+        row.recruiter_code || '',
+        ...(row.squad?.members?.map((member) => `${member.wallet_address} ${member.role}`) || []),
       ]
         .join(' ')
         .toLowerCase()
@@ -194,9 +214,14 @@ export default function RecruiterDashboard() {
       (acc, row) => {
         acc.total += 1
         acc[row.status] = (acc[row.status] || 0) + 1
+        acc.portalConnected += row.recruiter_last_login_at ? 1 : 0
+        acc.codeSet += row.recruiter_code ? 1 : 0
+        const squadTotal = row.squad?.counts.total || 0
+        acc.squadMembers += squadTotal
+        acc.activeSquads += squadTotal > 0 ? 1 : 0
         return acc
       },
-      { total: 0 } as Record<string, number>,
+      { total: 0, portalConnected: 0, codeSet: 0, squadMembers: 0, activeSquads: 0 } as Record<string, number>,
     )
   }, [rows])
 
@@ -218,7 +243,7 @@ export default function RecruiterDashboard() {
   }, [rows])
 
   const replaceRow = (updatedRow: RecruiterRow) => {
-    setRows((prev) => prev.map((row) => (row.id === updatedRow.id ? updatedRow : row)))
+    setRows((prev) => prev.map((row) => (row.id === updatedRow.id ? { ...row, ...updatedRow } : row)))
     setNoteDrafts((prev) => ({ ...prev, [updatedRow.id]: updatedRow.reviewer_notes || '' }))
   }
 
@@ -337,6 +362,22 @@ export default function RecruiterDashboard() {
             <div className="dashboard-stat__label">Rejected</div>
             <div className="dashboard-stat__value">{counts.rejected || 0}</div>
           </div>
+          <div className="dashboard-stat">
+            <div className="dashboard-stat__label">Portal connected</div>
+            <div className="dashboard-stat__value">{counts.portalConnected || 0}</div>
+          </div>
+          <div className="dashboard-stat">
+            <div className="dashboard-stat__label">Codes set</div>
+            <div className="dashboard-stat__value">{counts.codeSet || 0}</div>
+          </div>
+          <div className="dashboard-stat">
+            <div className="dashboard-stat__label">Active squads</div>
+            <div className="dashboard-stat__value">{counts.activeSquads || 0}</div>
+          </div>
+          <div className="dashboard-stat">
+            <div className="dashboard-stat__label">Squad members</div>
+            <div className="dashboard-stat__value">{counts.squadMembers || 0}</div>
+          </div>
         </div>
 
         <div className="dashboard-controls">
@@ -441,6 +482,71 @@ export default function RecruiterDashboard() {
                       <div>{row.source || 'coming-soon-popup'}</div>
                     </div>
                   </div>
+
+                  <section className="submission-overview">
+                    <div className="submission-overview__top">
+                      <div>
+                        <div className="submission-item__label">Recruiter setup overview</div>
+                        <div className="dashboard-results-meta dashboard-results-meta--compact">See who already logged into the portal, locked a code, and started building a squad.</div>
+                      </div>
+                      <div className="submission-summary-pills">
+                        <span className={`status-pill ${row.recruiter_last_login_at ? 'status-pill--approved' : ''}`}>
+                          {row.recruiter_last_login_at ? 'Portal connected' : row.status === 'approved' ? 'Approved, not signed in yet' : 'Portal locked'}
+                        </span>
+                        <span className={`status-pill ${row.recruiter_code ? 'status-pill--reviewing' : ''}`}>
+                          {row.recruiter_code ? `Code ${row.recruiter_code}` : 'Code not set yet'}
+                        </span>
+                        <span className={`status-pill ${(row.squad?.counts.total || 0) > 0 ? 'status-pill--approved' : ''}`}>
+                          Squad {(row.squad?.counts.total || 0).toString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="submission-grid">
+                      <div className="submission-item">
+                        <span className="submission-item__label">Portal login</span>
+                        <div>{row.recruiter_last_login_at ? formatDate(row.recruiter_last_login_at) : 'Not yet'}</div>
+                      </div>
+                      <div className="submission-item">
+                        <span className="submission-item__label">Recruiter code</span>
+                        <div>{row.recruiter_code || 'Not set yet'}</div>
+                      </div>
+                      <div className="submission-item">
+                        <span className="submission-item__label">Squad breakdown</span>
+                        <div>
+                          {(row.squad?.counts.total || 0) > 0
+                            ? `${row.squad?.counts.total || 0} total • ${row.squad?.counts.creators || 0} creators • ${row.squad?.counts.traders || 0} traders • ${row.squad?.counts.unknown || 0} unknown`
+                            : 'No bound squad members yet'}
+                        </div>
+                      </div>
+                      <div className="submission-item">
+                        <span className="submission-item__label">Dashboard status</span>
+                        <div>{row.recruiter_last_login_at ? 'Signed in and ready' : row.status === 'approved' ? 'Approved, waiting for first login' : 'Waiting for approval'}</div>
+                      </div>
+                    </div>
+
+                    {(row.squad?.members?.length || 0) > 0 ? (
+                      <div className="submission-squad">
+                        <div className="submission-item__label">Squad roster</div>
+                        <div className="portal-roster submission-squad-roster">
+                          {row.squad?.members.map((member) => (
+                            <article key={`${row.id}-${member.wallet_address}`} className="portal-roster__card">
+                              <div>
+                                <div className="submission-card__name submission-card__name--small">{shortenWallet(member.wallet_address)}</div>
+                                <div className="submission-card__meta">Bound {formatDate(member.bound_at)}</div>
+                              </div>
+                              <div className="portal-roster__meta">
+                                <span className={`status-pill ${member.role === 'creator' ? 'status-pill--approved' : member.role === 'trader' ? 'status-pill--reviewing' : ''}`}>{member.role}</span>
+                                <button type="button" className="mini-btn" onClick={() => void copyValue('Wallet', member.wallet_address)}>
+                                  Copy
+                                </button>
+                              </div>
+                            </article>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </section>
 
                   {row.notes ? (
                     <div className="submission-notes">

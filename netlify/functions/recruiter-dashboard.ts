@@ -24,6 +24,23 @@ type RecruiterRow = {
   approval_email_last_error?: string | null
   approval_email_last_attempt_at?: string | null
   approval_email_send_count?: number | null
+  recruiter_last_login_at?: string | null
+  squad?: {
+    counts: {
+      total: number
+      creators: number
+      traders: number
+      unknown: number
+    }
+    members: SquadMember[]
+  }
+}
+
+type SquadMember = {
+  wallet_address: string
+  recruiter_id: number
+  role: string
+  bound_at: string
 }
 
 type ReviewPayload = {
@@ -42,7 +59,7 @@ type PatchResult = {
 
 const ALLOWED_STATUSES = new Set(['new', 'reviewing', 'approved', 'rejected'])
 const SELECT_FIELDS =
-  'id,created_at,updated_at,status,source,name,x_handle,telegram_handle,wallet_address,email,country_region,focus,languages,notes,reviewed_at,reviewer_notes,recruiter_code,approved_at,approval_email_sent_at,approval_email_last_error,approval_email_last_attempt_at,approval_email_send_count'
+  'id,created_at,updated_at,status,source,name,x_handle,telegram_handle,wallet_address,email,country_region,focus,languages,notes,reviewed_at,reviewer_notes,recruiter_code,approved_at,recruiter_last_login_at,approval_email_sent_at,approval_email_last_error,approval_email_last_attempt_at,approval_email_send_count'
 
 function readToken(event: any) {
   return String(event.headers?.['x-dashboard-token'] || event.headers?.['x-recruiter-dashboard-token'] || event.queryStringParameters?.token || '').trim()
@@ -195,6 +212,52 @@ async function patchTable(table: string, id: number, body: Record<string, unknow
 
 async function listRows(table: string) {
   return await supabaseGet<RecruiterRow[]>(`/rest/v1/${table}?select=${encodeURIComponent(SELECT_FIELDS)}&order=created_at.desc&limit=250`)
+}
+
+function buildEmptySquad() {
+  return {
+    counts: { total: 0, creators: 0, traders: 0, unknown: 0 },
+    members: [] as SquadMember[],
+  }
+}
+
+function summarizeSquad(members: SquadMember[]) {
+  return members.reduce(
+    (acc, member) => {
+      acc.members.push(member)
+      acc.counts.total += 1
+      if (member.role === 'creator') acc.counts.creators += 1
+      else if (member.role === 'trader') acc.counts.traders += 1
+      else acc.counts.unknown += 1
+      return acc
+    },
+    buildEmptySquad(),
+  )
+}
+
+async function enrichRowsWithSquads(rows: RecruiterRow[]) {
+  if (!rows.length) return rows.map((row) => ({ ...row, squad: buildEmptySquad() }))
+
+  const recruiterIds = Array.from(new Set(rows.map((row) => Number(row.id)).filter((id) => Number.isInteger(id) && id > 0)))
+  if (!recruiterIds.length) return rows.map((row) => ({ ...row, squad: buildEmptySquad() }))
+
+  try {
+    const squadRows = await supabaseGet<SquadMember[]>(`/rest/v1/ref_wallets?select=wallet_address,recruiter_id,role,bound_at&recruiter_id=in.${encodeURIComponent(`(${recruiterIds.join(',')})`)}&order=bound_at.desc&limit=1000`)
+    const grouped = new Map<number, SquadMember[]>()
+
+    for (const member of squadRows) {
+      const recruiterId = Number(member.recruiter_id)
+      if (!grouped.has(recruiterId)) grouped.set(recruiterId, [])
+      grouped.get(recruiterId)!.push(member)
+    }
+
+    return rows.map((row) => ({
+      ...row,
+      squad: summarizeSquad(grouped.get(Number(row.id)) || []),
+    }))
+  } catch {
+    return rows.map((row) => ({ ...row, squad: buildEmptySquad() }))
+  }
 }
 
 async function patchRow(table: string, payload: ReviewPayload): Promise<PatchResult> {

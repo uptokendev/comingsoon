@@ -1199,3 +1199,53 @@ button, input, textarea, select { font: inherit; }
   }
 }
 
+
+
+.submission-card__name--small {
+  font-size: 16px;
+}
+
+.dashboard-results-meta--compact {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted2);
+}
+
+.submission-overview {
+  margin-top: 16px;
+  padding: 16px 0 0;
+  border-top: 1px solid rgba(246, 211, 124, 0.12);
+}
+
+.submission-overview__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.submission-summary-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.submission-squad {
+  margin-top: 14px;
+}
+
+.submission-squad-roster {
+  margin-top: 10px;
+}
+
+@media (max-width: 800px) {
+  .submission-overview__top {
+    flex-direction: column;
+  }
+
+  .submission-summary-pills {
+    justify-content: flex-start;
+  }
+}
