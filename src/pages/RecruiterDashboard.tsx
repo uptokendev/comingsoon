@@ -17,6 +17,12 @@ type RecruiterRow = {
   notes: string | null
   reviewed_at: string | null
   reviewer_notes: string | null
+  recruiter_code?: string | null
+  approved_at?: string | null
+  approval_email_sent_at?: string | null
+  approval_email_last_error?: string | null
+  approval_email_last_attempt_at?: string | null
+  approval_email_send_count?: number | null
 }
 
 type DashboardResponse = {
@@ -28,6 +34,9 @@ type DashboardResponse = {
   }
   rows?: RecruiterRow[]
   row?: RecruiterRow
+  message?: string
+  emailSent?: boolean
+  emailError?: string | null
 }
 
 const TOKEN_KEY = 'mwz_recruiter_dashboard_token_v1'
@@ -215,7 +224,7 @@ export default function RecruiterDashboard() {
 
   const runReviewAction = async (
     row: RecruiterRow,
-    payload: { status?: string; reviewerNotes?: string | null },
+    payload: { status?: string; reviewerNotes?: string | null; resendApprovalEmail?: boolean },
     successMessage: string,
   ) => {
     if (!savedToken.trim()) {
@@ -223,7 +232,7 @@ export default function RecruiterDashboard() {
       return
     }
 
-    setSavingKey(`${row.id}:${payload.status || 'notes'}`)
+    setSavingKey(`${row.id}:${payload.resendApprovalEmail ? 'resend' : payload.status || 'notes'}`)
     setError('')
     setActionMessage('')
 
@@ -246,7 +255,7 @@ export default function RecruiterDashboard() {
       }
 
       replaceRow(data.row)
-      setActionMessage(successMessage)
+      setActionMessage(data.message || successMessage)
       window.setTimeout(() => setActionMessage(''), 1600)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update recruiter submission.'
@@ -445,15 +454,31 @@ export default function RecruiterDashboard() {
                       <div>
                         <div className="submission-item__label">Reviewer notes</div>
                         <div className="review-panel__meta">Last reviewed: {formatDate(row.reviewed_at)}</div>
+                        {row.approval_email_sent_at ? <div className="review-panel__meta">Approval email sent: {formatDate(row.approval_email_sent_at)}</div> : null}
+                        {row.approval_email_last_attempt_at ? <div className="review-panel__meta">Last email attempt: {formatDate(row.approval_email_last_attempt_at)}</div> : null}
+                        {typeof row.approval_email_send_count === 'number' ? <div className="review-panel__meta">Emails sent: {row.approval_email_send_count}</div> : null}
+                        {row.approval_email_last_error ? <div className="review-panel__meta review-panel__meta--error">Approval email error: {row.approval_email_last_error}</div> : null}
                       </div>
-                      <button
-                        type="button"
-                        className="mini-btn"
-                        disabled={rowBusy}
-                        onClick={() => void runReviewAction(row, { reviewerNotes: noteDraft }, 'Reviewer notes saved.')}
-                      >
-                        {savingKey === `${row.id}:notes` ? 'Saving...' : 'Save notes'}
-                      </button>
+                      <div className="review-panel__head-actions">
+                        {row.status === 'approved' ? (
+                          <button
+                            type="button"
+                            className="mini-btn"
+                            disabled={rowBusy}
+                            onClick={() => void runReviewAction(row, { reviewerNotes: noteDraft, resendApprovalEmail: true }, 'Approval email resent.')}
+                          >
+                            {savingKey === `${row.id}:notes` ? 'Saving...' : savingKey === `${row.id}:resend` ? 'Sending...' : 'Resend email'}
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="mini-btn"
+                          disabled={rowBusy}
+                          onClick={() => void runReviewAction(row, { reviewerNotes: noteDraft }, 'Reviewer notes saved.')}
+                        >
+                          {savingKey === `${row.id}:notes` ? 'Saving...' : 'Save notes'}
+                        </button>
+                      </div>
                     </div>
 
                     <textarea

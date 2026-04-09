@@ -1,11 +1,17 @@
-# MemeWarzone — Coming Soon Landing
+# MemeWarzone — Coming Soon + Recruiter Referral Stack
 
-A lightweight Vite + React landing page that matches the MemeWarzone dark / fire / gold vibe and now includes:
+A lightweight Vite + React landing page with Netlify Functions and a Supabase-backed recruiter / referral flow.
+
+This repo now includes:
 
 - early recruiter onboarding popup
-- hero fallback CTA for the same recruiter form
+- recruiter reviewer page at `/hq/recruiters`
+- recruiter wallet-signature portal at `/recruiter/portal`
+- referral short links at `/r/<CODE>`
+- universal deep-link attribution with `?ref=<CODE>`
+- wallet-signature bind flow for creators / traders
+- squad tracking for each approved recruiter
 - bottom cookie / storage consent bar
-- serverless recruiter endpoints that write recruiter applications into Supabase
 
 ## Quickstart
 
@@ -14,6 +20,8 @@ npm i
 cp .env.example .env
 npm run dev
 ```
+
+For local testing with functions, use `netlify dev` rather than plain `vite` so the `/api/*` routes work.
 
 ## Configure social links
 
@@ -24,94 +32,112 @@ Edit `.env`:
 - `VITE_DISCORD_URL`
 - `VITE_DOCS_URL`
 - `VITE_STATUS_TEXT`
+- `VITE_APP_BASE_URL`
 
-## Recruiter database setup
+## Database setup
 
-1. Run `db/recruiter_waitlist.sql` in Supabase SQL editor.
-2. Set these project env vars in Netlify or Vercel:
-   - `SUPABASE_URL`
-   - `SUPABASE_SERVICE_ROLE_KEY`
-   - `RECRUITER_TABLE` (optional, defaults to `recruiter_waitlist`)
-3. Deploy.
+Run these in Supabase SQL Editor, in this order:
 
-The form posts to `/api/recruiter-waitlist`, validates the core fields, and inserts a row into Supabase using the service role key on the server only.
+1. `db/recruiter_waitlist.sql`
+2. `db/recruiter_referrals.sql`
+3. `db/recruiter_approval_email.sql`
 
-## Current recruiter fields
+The second file extends the recruiter table with a recruiter code and adds the referral/session tables:
 
-Required:
+- `ref_sessions`
+- `wallet_nonces`
+- `ref_wallets`
 
-- Name
-- X handle
-- Telegram handle
-- Main BNB wallet address
-- Email
-- Contact / review consent checkbox
+## Required Netlify env vars
 
-Optional:
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `RECRUITER_TABLE` (optional, defaults to `recruiter_waitlist`)
+- `RECRUITER_DASHBOARD_TOKEN` (for `/hq/recruiters`)
+- `RECRUITER_AUTH_SECRET` (for recruiter wallet sessions)
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `RESEND_REPLY_TO` (optional)
+- `APP_BASE_URL` (optional, defaults to `https://memewar.zone`)
 
-- Focus (creators, traders, or both)
-- Country / region
-- Languages
-- Short note
+## Deployed routes
 
-## Popup behavior
+Public:
 
-- opens automatically on first visit
-- if dismissed, it stays hidden for 7 days
-- if submitted successfully, it stops showing
-- hero CTA can reopen it anytime
+- `/`
+- `/r/:code`
+- `/?ref=CODE`
 
-## Cookie / storage behavior
+Protected:
 
-The site currently stores:
+- `/hq/recruiters` → reviewer page, token protected
+- `/recruiter/portal` → approved recruiter portal, wallet-signature protected
 
-- popup dismissal state
-- recruiter form draft state
-- cookie / storage preference state
+API endpoints:
 
-Optional analytics are not loaded unless the visitor accepts them.
+- `/api/recruiter-waitlist`
+- `/api/recruiter-dashboard`
+- `/api/recruiter-auth-nonce`
+- `/api/recruiter-auth-verify`
+- `/api/recruiter-logout`
+- `/api/recruiter-portal`
+- `/api/ref-visit`
+- `/api/ref-refresh`
+- `/api/ref-status`
+- `/api/ref-nonce`
+- `/api/ref-bind`
 
-## Swap branding assets
+## Approval flow
 
-- Logo: `public/logo.png`
-- Favicon: `public/favicon.ico`
-- OpenGraph image: `public/og.png`
+1. Recruiter applies through the popup.
+2. You review them in Supabase or your reviewer page.
+3. Set `status = approved` for the application.
+4. The reviewer endpoint sends a branded approval email through Resend with a direct link to `/recruiter/portal`.
+5. For already-approved recruiters, the reviewer page can manually resend the approval email.
+6. On first successful wallet sign-in, the portal auto-generates a unique recruiter code if one does not exist yet.
+7. Recruiters can later change that code inside their portal if the new code is still free.
 
-## Deploy
+## Referral flow
 
-### Netlify
+### Canonical short link
+
+`https://yourdomain/r/CODE`
+
+This captures the referral and redirects back to the landing page.
+
+### Universal deep link
+
+`https://yourdomain/anything?ref=CODE`
+
+This also captures the referral and keeps it alive for 30 days in the same browser/device.
+
+### Bind moment
+
+When a creator or trader connects their wallet from a referred browser:
+
+1. the frontend requests a bind nonce
+2. the wallet signs the bind message
+3. the backend verifies the signature
+4. the wallet is immutably mapped to that recruiter in `ref_wallets`
+
+Self-referrals are rejected. Existing wallet bindings are preserved and not overwritten.
+
+## Recruiter portal
+
+Approved recruiters can:
+
+- sign in with their approved wallet
+- view their recruiter code
+- copy canonical + deep links
+- change their code
+- track squad size
+- see creators vs traders vs unknown
+- share their squad on X or via the browser share API
+
+## Netlify deployment
 
 - Build command: `npm run build`
 - Publish directory: `dist`
 - Functions directory: `netlify/functions`
 
-The repo includes `public/_redirects` so `/hq/recruiters` works as an SPA route and `/api/*` is proxied to the Netlify Functions.
-
-### Vercel
-
-- Build command: `npm run build`
-- Output directory: `dist`
-
-`vercel.json` keeps SPA routing working there as well.
-
-
-## Recruiter reviewer dashboard
-
-A small protected reviewer page is available at `/hq/recruiters`.
-
-Set this server-side env var:
-
-- `RECRUITER_DASHBOARD_TOKEN`
-
-How it works:
-
-- open `/hq/recruiters`
-- enter the token
-- the page loads submissions from Supabase through the protected `/api/recruiter-dashboard` route
-
-Notes:
-
-- the token is validated server-side
-- you can save reviewer notes
-- you can move applications between `new`, `reviewing`, `approved`, and `rejected`
-- the browser stores the token locally for convenience until you clear it
+This repo includes both `netlify.toml` and `public/_redirects` so SPA routes and function routes work on Netlify.

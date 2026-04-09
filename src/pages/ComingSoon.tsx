@@ -1,8 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { CookieBar } from '../components/CookieBar'
 import { RecruiterModal } from '../components/RecruiterModal'
 import SocialButton from '../components/SocialButton'
 import { SpaceBackground } from '../components/SpaceBackground'
+import { captureReferralVisit, fetchReferralStatus, getStoredReferralCode, normalizeCode, refreshReferral, saveReferralCode, type ReferralStatus } from '../lib/referral'
+import { connectWallet } from '../lib/wallet'
 
 const X_URL = (import.meta.env.VITE_X_URL as string) || 'https://x.com/MemeWarzoneHQ'
 const TG_URL = (import.meta.env.VITE_TELEGRAM_URL as string) || 'https://t.me/'
@@ -13,11 +16,7 @@ const STATUS = (import.meta.env.VITE_STATUS_TEXT as string) || ''
 function IconDocs() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M6.5 4.5H18c.83 0 1.5.67 1.5 1.5v14c0 .83-.67 1.5-1.5 1.5H6.5A2.5 2.5 0 0 1 4 19V7A2.5 2.5 0 0 1 6.5 4.5Z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      />
+      <path d="M6.5 4.5H18c.83 0 1.5.67 1.5 1.5v14c0 .83-.67 1.5-1.5 1.5H6.5A2.5 2.5 0 0 1 4 19V7A2.5 2.5 0 0 1 6.5 4.5Z" stroke="currentColor" strokeWidth="1.6" />
       <path d="M7 8h9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
       <path d="M7 12h9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
       <path d="M7 16h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -28,10 +27,7 @@ function IconDocs() {
 function IconX() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M18.9 2H21.9L15.4 9.4L23 22H17.4L13 14.8L6.7 22H3.7L10.8 13.9L3.5 2H9.2L13.2 8.6L18.9 2Z"
-        fill="currentColor"
-      />
+      <path d="M18.9 2H21.9L15.4 9.4L23 22H17.4L13 14.8L6.7 22H3.7L10.8 13.9L3.5 2H9.2L13.2 8.6L18.9 2Z" fill="currentColor" />
     </svg>
   )
 }
@@ -39,10 +35,7 @@ function IconX() {
 function IconTelegram() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M9.6 15.4L9.3 19.4C9.7 19.4 9.9 19.2 10.2 18.9L12.1 17.1L16.1 20C16.8 20.4 17.3 20.2 17.5 19.3L20.9 4.9C21.1 3.8 20.5 3.4 19.8 3.7L2.7 10.3C1.6 10.7 1.6 11.2 2.5 11.5L6.9 12.9L17.1 6.5C17.6 6.2 18.1 6.4 17.7 6.8L9.6 15.4Z"
-        fill="currentColor"
-      />
+      <path d="M9.6 15.4L9.3 19.4C9.7 19.4 9.9 19.2 10.2 18.9L12.1 17.1L16.1 20C16.8 20.4 17.3 20.2 17.5 19.3L20.9 4.9C21.1 3.8 20.5 3.4 19.8 3.7L2.7 10.3C1.6 10.7 1.6 11.2 2.5 11.5L6.9 12.9L17.1 6.5C17.6 6.2 18.1 6.4 17.7 6.8L9.6 15.4Z" fill="currentColor" />
     </svg>
   )
 }
@@ -50,16 +43,98 @@ function IconTelegram() {
 function IconDiscord() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M19.5 5.2C18.1 4.5 16.7 4 15.2 3.7L15 4.1C16.3 4.5 17.5 5 18.7 5.7C17.4 5.1 16.1 4.7 14.7 4.4C13.1 4.1 11.5 4.1 9.9 4.4C8.5 4.7 7.2 5.1 5.9 5.7C7.1 5 8.3 4.5 9.6 4.1L9.4 3.7C7.9 4 6.5 4.5 5.1 5.2C2.7 8.8 2 12.3 2.3 15.8C3.7 16.8 5.2 17.5 6.8 17.9C7.2 17.4 7.6 16.8 7.9 16.3C7.3 16.1 6.7 15.8 6.2 15.5L6.5 15.3C7.9 16 9.4 16.5 10.9 16.7C12.5 16.9 14.1 16.9 15.7 16.7C17.3 16.5 18.8 16 20.2 15.3L20.5 15.5C20 15.8 19.4 16.1 18.8 16.3C19.1 16.8 19.5 17.4 19.9 17.9C21.5 17.5 23 16.8 24.4 15.8C24.8 11.9 23.8 8.4 19.5 5.2ZM8.5 14.3C7.6 14.3 6.9 13.5 6.9 12.6C6.9 11.7 7.6 10.9 8.5 10.9C9.4 10.9 10.1 11.7 10.1 12.6C10.1 13.5 9.4 14.3 8.5 14.3ZM15.9 14.3C15 14.3 14.3 13.5 14.3 12.6C14.3 11.7 15 10.9 15.9 10.9C16.8 10.9 17.5 11.7 17.5 12.6C17.5 13.5 16.8 14.3 15.9 14.3Z"
-        fill="currentColor"
-      />
+      <path d="M19.5 5.2C18.1 4.5 16.7 4 15.2 3.7L15 4.1C16.3 4.5 17.5 5 18.7 5.7C17.4 5.1 16.1 4.7 14.7 4.4C13.1 4.1 11.5 4.1 9.9 4.4C8.5 4.7 7.2 5.1 5.9 5.7C7.1 5 8.3 4.5 9.6 4.1L9.4 3.7C7.9 4 6.5 4.5 5.1 5.2C2.7 8.8 2 12.3 2.3 15.8C3.7 16.8 5.2 17.5 6.8 17.9C7.2 17.4 7.6 16.8 7.9 16.3C7.3 16.1 6.7 15.8 6.2 15.5L6.5 15.3C7.9 16 9.4 16.5 10.9 16.7C12.5 16.9 14.1 16.9 15.7 16.7C17.3 16.5 18.8 16 20.2 15.3L20.5 15.5C20 15.8 19.4 16.1 18.8 16.3C19.1 16.8 19.5 17.4 19.9 17.9C21.5 17.5 23 16.8 24.4 15.8C24.8 11.9 23.8 8.4 19.5 5.2ZM8.5 14.3C7.6 14.3 6.9 13.5 6.9 12.6C6.9 11.7 7.6 10.9 8.5 10.9C9.4 10.9 10.1 11.7 10.1 12.6C10.1 13.5 9.4 14.3 8.5 14.3ZM15.9 14.3C15 14.3 14.3 13.5 14.3 12.6C14.3 11.7 15 10.9 15.9 10.9C16.8 10.9 17.5 11.7 17.5 12.6C17.5 13.5 16.8 14.3 15.9 14.3Z" fill="currentColor" />
     </svg>
   )
 }
 
 export default function ComingSoon() {
   const [recruiterModalOpen, setRecruiterModalOpen] = useState(false)
+  const [referralStatus, setReferralStatus] = useState<ReferralStatus>({ hasReferral: false })
+  const [referralRole, setReferralRole] = useState<'creator' | 'trader'>('creator')
+  const [referralLoading, setReferralLoading] = useState(false)
+  const [referralMessage, setReferralMessage] = useState('')
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    let active = true
+
+    ;(async () => {
+      const params = new URLSearchParams(location.search)
+      const queryCode = normalizeCode(params.get('ref') || '')
+
+      if (queryCode) {
+        const result = await captureReferralVisit(queryCode, `${location.pathname}${location.search}`)
+        if (result.ok) {
+          saveReferralCode(queryCode)
+          params.delete('ref')
+          const nextSearch = params.toString()
+          navigate(`${location.pathname}${nextSearch ? `?${nextSearch}` : ''}`, { replace: true })
+        }
+      }
+
+      try {
+        let status = await fetchReferralStatus()
+        if (!status.hasReferral) {
+          const storedCode = getStoredReferralCode()
+          if (storedCode) {
+            const refreshed = await refreshReferral(storedCode)
+            if (refreshed.ok) status = await fetchReferralStatus()
+          }
+        }
+        if (active) {
+          setReferralStatus(status)
+        }
+      } catch (error) {
+        if (active) setReferralMessage(error instanceof Error ? error.message : 'Referral check failed.')
+      }
+    })()
+
+    return () => {
+      active = false
+    }
+  }, [location.pathname, location.search, navigate])
+
+  const bindReferral = async () => {
+    setReferralLoading(true)
+    setReferralMessage('')
+
+    try {
+      const { signer, address } = await connectWallet()
+      const nonceResponse = await fetch(`/api/ref-nonce?address=${encodeURIComponent(address)}`, {
+        credentials: 'same-origin',
+      })
+      const nonceData = await nonceResponse.json().catch(() => ({}))
+      if (!nonceResponse.ok || !nonceData?.message) {
+        throw new Error(nonceData?.error || 'Failed to create a referral bind challenge.')
+      }
+
+      const signature = await signer.signMessage(nonceData.message)
+      const bindResponse = await fetch('/api/ref-bind', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address, signature, role: referralRole }),
+      })
+      const bindData = await bindResponse.json().catch(() => ({}))
+      if (!bindResponse.ok || !bindData?.ok) {
+        throw new Error(bindData?.error || 'Failed to lock in your recruiter attribution.')
+      }
+
+      setReferralStatus({
+        hasReferral: true,
+        code: bindData?.binding?.recruiter_code || referralStatus.code,
+        isBound: true,
+        binding: bindData?.binding || null,
+      })
+      setReferralMessage(bindData?.alreadyBound ? 'This wallet was already linked to a recruiter.' : `Wallet locked in as a ${referralRole}.`)
+    } catch (error) {
+      setReferralMessage(error instanceof Error ? error.message : 'Failed to lock in your recruiter attribution.')
+    } finally {
+      setReferralLoading(false)
+    }
+  }
 
   return (
     <div className="page">
@@ -93,10 +168,42 @@ export default function ComingSoon() {
             <div className="hero-callout__text">
               Early Recruiters get priority onboarding so they can start building their squad before the warzone fully opens.
             </div>
-            <button type="button" className="hero-callout__button" onClick={() => setRecruiterModalOpen(true)}>
-              Apply as Recruiter
-            </button>
+            <div className="hero-callout__actions">
+              <button type="button" className="hero-callout__button" onClick={() => setRecruiterModalOpen(true)}>
+                Apply as Recruiter
+              </button>
+              <Link to="/recruiter/portal" className="hero-callout__button hero-callout__button--ghost">
+                Recruiter sign in
+              </Link>
+            </div>
           </div>
+
+          {referralStatus.hasReferral ? (
+            <div className="hero-callout hero-callout--referral">
+              <div className="hero-callout__title">Squad invite detected</div>
+              <div className="hero-callout__text">
+                You landed through recruiter code <strong>{referralStatus.code}</strong>. Lock your wallet now so this attribution survives until launch.
+              </div>
+              {referralStatus.isBound ? (
+                <div className="referral-bound">Wallet already linked as <strong>{referralStatus.binding?.role || 'unknown'}</strong>.</div>
+              ) : (
+                <>
+                  <div className="referral-role-switch">
+                    <button type="button" className={`mini-toggle ${referralRole === 'creator' ? 'mini-toggle--active' : ''}`} onClick={() => setReferralRole('creator')}>
+                      I’m a creator
+                    </button>
+                    <button type="button" className={`mini-toggle ${referralRole === 'trader' ? 'mini-toggle--active' : ''}`} onClick={() => setReferralRole('trader')}>
+                      I’m a trader
+                    </button>
+                  </div>
+                  <button type="button" className="hero-callout__button" onClick={() => void bindReferral()} disabled={referralLoading}>
+                    {referralLoading ? 'Waiting for signature...' : 'Connect wallet & lock referral'}
+                  </button>
+                </>
+              )}
+              {referralMessage ? <div className="dashboard-results-meta">{referralMessage}</div> : null}
+            </div>
+          ) : null}
 
           <div className="cta">
             <SocialButton href={X_URL} label="Follow on X" icon={<IconX />} />
