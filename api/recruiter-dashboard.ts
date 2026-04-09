@@ -38,8 +38,16 @@ type PatchResult = {
 }
 
 const ALLOWED_STATUSES = new Set(['new', 'reviewing', 'approved', 'rejected'])
-const SELECT_FIELDS =
-  'id,created_at,updated_at,status,source,name,x_handle,telegram_handle,wallet_address,email,country_region,focus,languages,notes,reviewed_at,reviewer_notes,recruiter_code,approved_at,approval_email_sent_at,approval_email_last_error,approval_email_last_attempt_at,approval_email_send_count'
+const BASE_SELECT_FIELDS =
+  'id,created_at,updated_at,status,source,name,x_handle,telegram_handle,wallet_address,email,country_region,focus,languages,notes,reviewed_at,reviewer_notes'
+const OPTIONAL_SELECT_FIELDS = [
+  'recruiter_code',
+  'approved_at',
+  'approval_email_sent_at',
+  'approval_email_last_error',
+  'approval_email_last_attempt_at',
+  'approval_email_send_count',
+] as const
 
 function json(res: any, status: number, body: Record<string, unknown>) {
   res.status(status).setHeader('Content-Type', 'application/json')
@@ -63,6 +71,42 @@ function getConfig() {
   const APP_BASE_URL = process.env.APP_BASE_URL || process.env.VITE_APP_BASE_URL || 'https://memewar.zone'
 
   return { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, RECRUITER_TABLE, DASHBOARD_TOKEN, RESEND_API_KEY, RESEND_FROM_EMAIL, RESEND_REPLY_TO, APP_BASE_URL }
+}
+
+function buildSelectFields(optionalFields: readonly string[] = OPTIONAL_SELECT_FIELDS) {
+  return [BASE_SELECT_FIELDS, ...optionalFields].join(',')
+}
+
+function parseMissingColumn(error: unknown) {
+  const raw = error instanceof Error ? error.message : String(error || '')
+  let combined = raw
+  try {
+    const parsed = JSON.parse(raw)
+    if (parsed && typeof parsed === 'object') {
+      combined = [parsed.message, parsed.details, parsed.hint, raw].filter(Boolean).join(' ')
+    }
+  } catch {}
+  const patterns = [
+    /column[\s"']+([a-zA-Z0-9_]+)[\s"']+does not exist/i,
+    /Could not find the ['\"]?([a-zA-Z0-9_]+)['\"]? column/i,
+  ]
+  for (const pattern of patterns) {
+    const match = combined.match(pattern)
+    if (match?.[1]) return match[1]
+  }
+  return ''
+}
+
+function normalizeRecruiterRow(row: RecruiterRow) {
+  return {
+    ...row,
+    recruiter_code: row.recruiter_code ?? null,
+    approved_at: row.approved_at ?? null,
+    approval_email_sent_at: row.approval_email_sent_at ?? null,
+    approval_email_last_error: row.approval_email_last_error ?? null,
+    approval_email_last_attempt_at: row.approval_email_last_attempt_at ?? null,
+    approval_email_send_count: row.approval_email_send_count ?? 0,
+  }
 }
 
 function readBody(req: any): ReviewPayload {

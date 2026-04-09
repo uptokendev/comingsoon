@@ -133,21 +133,89 @@ async function sendApprovalEmail(row) {
     }
     return response.json().catch(() => ({}));
 }
+function buildSelectFields(optionalFields = OPTIONAL_SELECT_FIELDS) {
+    return [BASE_SELECT_FIELDS, ...optionalFields].join(',');
+}
+function parseMissingColumn(error) {
+    const raw = error instanceof Error ? error.message : String(error || '');
+    let combined = raw;
+    try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+            combined = [parsed.message, parsed.details, parsed.hint, raw].filter(Boolean).join(' ');
+        }
+    }
+    catch { }
+    const patterns = [
+        /column[\s"']+([a-zA-Z0-9_]+)[\s"']+does not exist/i,
+        /Could not find the ['\"]?([a-zA-Z0-9_]+)['\"]? column/i,
+    ];
+    for (const pattern of patterns) {
+        const match = combined.match(pattern);
+        if (match?.[1])
+            return match[1];
+    }
+    return '';
+}
+function normalizeRecruiterRow(row) {
+    return {
+        ...row,
+        recruiter_code: row.recruiter_code ?? null,
+        approved_at: row.approved_at ?? null,
+        recruiter_last_login_at: row.recruiter_last_login_at ?? null,
+        approval_email_sent_at: row.approval_email_sent_at ?? null,
+        approval_email_last_error: row.approval_email_last_error ?? null,
+        approval_email_last_attempt_at: row.approval_email_last_attempt_at ?? null,
+        approval_email_send_count: row.approval_email_send_count ?? 0,
+    };
+}
+async function supabaseGetRowsWithFallback(pathFactory) {
+    const optionalFields = [...OPTIONAL_SELECT_FIELDS];
+    while (true) {
+        try {
+            return await (0, supabase_1.supabaseGet)(pathFactory(buildSelectFields(optionalFields)));
+        }
+        catch (error) {
+            const missingColumn = parseMissingColumn(error);
+            if (missingColumn && optionalFields.includes(missingColumn)) {
+                const next = optionalFields.filter((field) => field !== missingColumn);
+                optionalFields.splice(0, optionalFields.length, ...next);
+                continue;
+            }
+            throw error;
+        }
+    }
+}
 async function getRowById(table, id) {
-    const rows = await (0, supabase_1.supabaseGet)(`/rest/v1/${table}?select=${encodeURIComponent(SELECT_FIELDS)}&id=eq.${id}&limit=1`);
+    const rows = await supabaseGetRowsWithFallback((selectFields) => `/rest/v1/${table}?select=${encodeURIComponent(selectFields)}&id=eq.${id}&limit=1`);
     if (!rows[0])
         throw new Error('Submission was not found.');
-    return rows[0];
+    return normalizeRecruiterRow(rows[0]);
 }
 async function patchTable(table, id, body) {
-    const rows = await (0, supabase_1.supabasePatch)(`/rest/v1/${table}?id=eq.${id}&select=${encodeURIComponent(SELECT_FIELDS)}`, body);
-    const row = rows[0];
-    if (!row)
-        throw new Error('Submission was not found.');
-    return row;
+    const optionalFields = [...OPTIONAL_SELECT_FIELDS];
+    while (true) {
+        try {
+            const rows = await (0, supabase_1.supabasePatch)(`/rest/v1/${table}?id=eq.${id}&select=${encodeURIComponent(buildSelectFields(optionalFields))}`, body);
+            const row = rows[0];
+            if (!row)
+                throw new Error('Submission was not found.');
+            return normalizeRecruiterRow(row);
+        }
+        catch (error) {
+            const missingColumn = parseMissingColumn(error);
+            if (missingColumn && optionalFields.includes(missingColumn)) {
+                const next = optionalFields.filter((field) => field !== missingColumn);
+                optionalFields.splice(0, optionalFields.length, ...next);
+                continue;
+            }
+            throw error;
+        }
+    }
 }
 async function listRows(table) {
-    return await (0, supabase_1.supabaseGet)(`/rest/v1/${table}?select=${encodeURIComponent(SELECT_FIELDS)}&order=created_at.desc&limit=250`);
+    const rows = await supabaseGetRowsWithFallback((selectFields) => `/rest/v1/${table}?select=${encodeURIComponent(selectFields)}&order=created_at.desc&limit=250`);
+    return rows.map(normalizeRecruiterRow);
 }
 function buildEmptySquad() {
     return {
@@ -274,7 +342,7 @@ const handler = async (event) => {
     }
     try {
         if (event.httpMethod === 'GET') {
-            const rows = await listRows(RECRUITER_TABLE);
+            const rows = await enrichRowsWithSquads(await listRows(RECRUITER_TABLE));
             const counts = rows.reduce((acc, row) => {
                 acc.total += 1;
                 const key = row.status || 'unknown';

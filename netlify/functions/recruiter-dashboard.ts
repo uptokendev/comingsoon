@@ -58,8 +58,17 @@ type PatchResult = {
 }
 
 const ALLOWED_STATUSES = new Set(['new', 'reviewing', 'approved', 'rejected'])
-const SELECT_FIELDS =
-  'id,created_at,updated_at,status,source,name,x_handle,telegram_handle,wallet_address,email,country_region,focus,languages,notes,reviewed_at,reviewer_notes,recruiter_code,approved_at,recruiter_last_login_at,approval_email_sent_at,approval_email_last_error,approval_email_last_attempt_at,approval_email_send_count'
+const BASE_SELECT_FIELDS =
+  'id,created_at,updated_at,status,source,name,x_handle,telegram_handle,wallet_address,email,country_region,focus,languages,notes,reviewed_at,reviewer_notes'
+const OPTIONAL_SELECT_FIELDS = [
+  'recruiter_code',
+  'approved_at',
+  'recruiter_last_login_at',
+  'approval_email_sent_at',
+  'approval_email_last_error',
+  'approval_email_last_attempt_at',
+  'approval_email_send_count',
+] as const
 
 function readToken(event: any) {
   return String(event.headers?.['x-dashboard-token'] || event.headers?.['x-recruiter-dashboard-token'] || event.queryStringParameters?.token || '').trim()
@@ -197,21 +206,95 @@ async function sendApprovalEmail(row: RecruiterRow) {
   return response.json().catch(() => ({}))
 }
 
+function buildSelectFields(optionalFields: readonly string[] = OPTIONAL_SELECT_FIELDS) {
+  return [BASE_SELECT_FIELDS, ...optionalFields].join(',')
+}
+
+function parseMissingColumn(error: unknown) {
+  const raw = error instanceof Error ? error.message : String(error || '')
+  let combined = raw
+
+  try {
+    const parsed = JSON.parse(raw)
+    if (parsed && typeof parsed === 'object') {
+      combined = [parsed.message, parsed.details, parsed.hint, raw].filter(Boolean).join(' ')
+    }
+  } catch {}
+
+  const patterns = [
+    /column[\s"']+([a-zA-Z0-9_]+)[\s"']+does not exist/i,
+    /Could not find the ['\"]?([a-zA-Z0-9_]+)['\"]? column/i,
+  ]
+
+  for (const pattern of patterns) {
+    const match = combined.match(pattern)
+    if (match?.[1]) return match[1]
+  }
+
+  return ''
+}
+
+function normalizeRecruiterRow(row: RecruiterRow) {
+  return {
+    ...row,
+    recruiter_code: row.recruiter_code ?? null,
+    approved_at: row.approved_at ?? null,
+    recruiter_last_login_at: row.recruiter_last_login_at ?? null,
+    approval_email_sent_at: row.approval_email_sent_at ?? null,
+    approval_email_last_error: row.approval_email_last_error ?? null,
+    approval_email_last_attempt_at: row.approval_email_last_attempt_at ?? null,
+    approval_email_send_count: row.approval_email_send_count ?? 0,
+  }
+}
+
+async function supabaseGetRowsWithFallback(pathFactory: (selectFields: string) => string) {
+  const optionalFields = [...OPTIONAL_SELECT_FIELDS]
+
+  while (true) {
+    try {
+      return await supabaseGet<RecruiterRow[]>(pathFactory(buildSelectFields(optionalFields)))
+    } catch (error) {
+      const missingColumn = parseMissingColumn(error)
+      if (missingColumn && optionalFields.includes(missingColumn as (typeof OPTIONAL_SELECT_FIELDS)[number])) {
+        const next = optionalFields.filter((field) => field !== missingColumn)
+        optionalFields.splice(0, optionalFields.length, ...next)
+        continue
+      }
+      throw error
+    }
+  }
+}
+
 async function getRowById(table: string, id: number) {
-  const rows = await supabaseGet<RecruiterRow[]>(`/rest/v1/${table}?select=${encodeURIComponent(SELECT_FIELDS)}&id=eq.${id}&limit=1`)
+  const rows = await supabaseGetRowsWithFallback((selectFields) => `/rest/v1/${table}?select=${encodeURIComponent(selectFields)}&id=eq.${id}&limit=1`)
   if (!rows[0]) throw new Error('Submission was not found.')
-  return rows[0]
+  return normalizeRecruiterRow(rows[0])
 }
 
 async function patchTable(table: string, id: number, body: Record<string, unknown>) {
-  const rows = await supabasePatch(`/rest/v1/${table}?id=eq.${id}&select=${encodeURIComponent(SELECT_FIELDS)}`, body)
-  const row = (rows as RecruiterRow[])[0]
-  if (!row) throw new Error('Submission was not found.')
-  return row
+  const optionalFields = [...OPTIONAL_SELECT_FIELDS]
+
+  while (true) {
+    try {
+      const rows = await supabasePatch(`/rest/v1/${table}?id=eq.${id}&select=${encodeURIComponent(buildSelectFields(optionalFields))}`, body)
+      const row = (rows as RecruiterRow[])[0]
+      if (!row) throw new Error('Submission was not found.')
+      return normalizeRecruiterRow(row)
+    } catch (error) {
+      const missingColumn = parseMissingColumn(error)
+      if (missingColumn && optionalFields.includes(missingColumn as (typeof OPTIONAL_SELECT_FIELDS)[number])) {
+        const next = optionalFields.filter((field) => field !== missingColumn)
+        optionalFields.splice(0, optionalFields.length, ...next)
+        continue
+      }
+      throw error
+    }
+  }
 }
 
 async function listRows(table: string) {
-  return await supabaseGet<RecruiterRow[]>(`/rest/v1/${table}?select=${encodeURIComponent(SELECT_FIELDS)}&order=created_at.desc&limit=250`)
+  const rows = await supabaseGetRowsWithFallback((selectFields) => `/rest/v1/${table}?select=${encodeURIComponent(selectFields)}&order=created_at.desc&limit=250`)
+  return rows.map(normalizeRecruiterRow)
 }
 
 function buildEmptySquad() {
@@ -351,7 +434,7 @@ export const handler = async (event: any) => {
 
   try {
     if (event.httpMethod === 'GET') {
-      const rows = await listRows(RECRUITER_TABLE)
+      const rows = await enrichRowsWithSquads(await listRows(RECRUITER_TABLE))
       const counts = rows.reduce(
         (acc, row) => {
           acc.total += 1
