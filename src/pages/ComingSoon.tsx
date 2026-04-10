@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useMatch } from 'react-router-dom'
 import { CookieBar } from '../components/CookieBar'
 import { RecruiterModal } from '../components/RecruiterModal'
 import SocialButton from '../components/SocialButton'
@@ -58,13 +58,15 @@ export default function ComingSoon() {
   const [referralGateDismissed, setReferralGateDismissed] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
+  const referralMatch = useMatch('/r/:code')
+  const pathReferralCode = normalizeCode(referralMatch?.params?.code || '')
 
   const referralCodeHint = useMemo(() => {
     const queryCode = normalizeCode(new URLSearchParams(location.search).get('ref') || '')
-    return queryCode || getStoredReferralCode() || ''
-  }, [location.search])
+    return pathReferralCode || queryCode || getStoredReferralCode() || ''
+  }, [location.search, pathReferralCode])
 
-  const referralGateActive = !referralGateDismissed && (checkingReferral ? Boolean(referralCodeHint) : referralStatus.hasReferral)
+  const referralGateActive = !referralGateDismissed && Boolean(referralCodeHint || referralStatus.hasReferral)
 
   useEffect(() => {
     let active = true
@@ -72,32 +74,66 @@ export default function ComingSoon() {
     ;(async () => {
       const params = new URLSearchParams(location.search)
       const queryCode = normalizeCode(params.get('ref') || '')
-
-      if (queryCode) {
-        const result = await captureReferralVisit(queryCode, `${location.pathname}${location.search}`)
-        if (result.ok) {
-          saveReferralCode(queryCode)
-          params.delete('ref')
-          const nextSearch = params.toString()
-          navigate(`${location.pathname}${nextSearch ? `?${nextSearch}` : ''}`, { replace: true })
-        }
-      }
+      const incomingCode = pathReferralCode || queryCode || ''
 
       try {
-        let status = await fetchReferralStatus()
-        if (!status.hasReferral) {
-          const storedCode = getStoredReferralCode()
-          if (storedCode) {
-            const refreshed = await refreshReferral(storedCode)
-            if (refreshed.ok) status = await fetchReferralStatus()
+        if (incomingCode) {
+          const result = await captureReferralVisit(incomingCode, `${location.pathname}${location.search}`)
+          if (result.ok) {
+            saveReferralCode(incomingCode)
+            if (active) {
+              setReferralStatus((prev) => ({
+                ...prev,
+                hasReferral: true,
+                code: incomingCode,
+              }))
+            }
+
+            if (queryCode) {
+              params.delete('ref')
+              const nextSearch = params.toString()
+              navigate(`${location.pathname}${nextSearch ? `?${nextSearch}` : ''}`, { replace: true })
+            }
+          } else if (active) {
+            setReferralMessage(result.error || 'Referral check failed.')
           }
         }
+
+        let status = await fetchReferralStatus().catch(() => ({ hasReferral: false } as ReferralStatus))
+
+        if (!status.hasReferral) {
+          const storedCode = incomingCode || getStoredReferralCode()
+          if (storedCode) {
+            const refreshed = await refreshReferral(storedCode)
+            if (refreshed.ok) {
+              status = await fetchReferralStatus().catch(() => ({
+                hasReferral: true,
+                code: storedCode,
+                isBound: false,
+                binding: null,
+              } as ReferralStatus))
+            }
+          }
+        }
+
         if (active) {
-          setReferralStatus(status)
-          if (!status.hasReferral) setReferralGateDismissed(false)
+          if (status.hasReferral) {
+            setReferralStatus(status)
+          } else if (incomingCode) {
+            setReferralStatus({ hasReferral: true, code: incomingCode, isBound: false, binding: null })
+          } else {
+            setReferralStatus(status)
+            setReferralGateDismissed(false)
+          }
         }
       } catch (error) {
-        if (active) setReferralMessage(error instanceof Error ? error.message : 'Referral check failed.')
+        if (active) {
+          const fallbackCode = incomingCode || getStoredReferralCode()
+          if (fallbackCode) {
+            setReferralStatus({ hasReferral: true, code: fallbackCode, isBound: false, binding: null })
+          }
+          setReferralMessage(error instanceof Error ? error.message : 'Referral check failed.')
+        }
       } finally {
         if (active) setCheckingReferral(false)
       }
@@ -106,13 +142,22 @@ export default function ComingSoon() {
     return () => {
       active = false
     }
-  }, [location.pathname, location.search, navigate])
+  }, [location.pathname, location.search, navigate, pathReferralCode])
 
   const bindReferral = async () => {
     setReferralLoading(true)
     setReferralMessage('')
 
     try {
+      const activeCode = referralStatus.code || referralCodeHint
+      if (activeCode) {
+        const refreshed = await refreshReferral(activeCode)
+        if (refreshed.ok) {
+          const refreshedStatus = await fetchReferralStatus().catch(() => ({ hasReferral: true, code: activeCode, isBound: false, binding: null } as ReferralStatus))
+          setReferralStatus(refreshedStatus)
+        }
+      }
+
       const { signer, address } = await connectWallet()
       const nonceResponse = await fetch(`/api/ref-nonce?address=${encodeURIComponent(address)}`, {
         credentials: 'same-origin',
@@ -235,7 +280,7 @@ export default function ComingSoon() {
             </div>
 
             {checkingReferral ? (
-              <div className="dashboard-results-meta">Checking recruiter invite…</div>
+              <div className="dashboard-results-meta">Checking recruiter invite and preparing your creator/trader connect flow…</div>
             ) : referralStatus.isBound ? (
               <>
                 <div className="referral-bound">
