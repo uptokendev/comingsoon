@@ -9,6 +9,7 @@ const DISMISS_FOR_DAYS = 7
 export type RecruiterModalProps = {
   forcedOpen: boolean
   onCloseForced: () => void
+  suppressAutoOpen?: boolean
 }
 
 type RecruiterFormState = {
@@ -105,7 +106,7 @@ function validateForm(form: ReturnType<typeof normalizePayload>) {
   return ''
 }
 
-export function RecruiterModal({ forcedOpen, onCloseForced }: RecruiterModalProps) {
+export function RecruiterModal({ forcedOpen, onCloseForced, suppressAutoOpen = false }: RecruiterModalProps) {
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState<RecruiterFormState>(() => loadDraft())
   const [error, setError] = useState('')
@@ -113,12 +114,14 @@ export function RecruiterModal({ forcedOpen, onCloseForced }: RecruiterModalProp
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
+    if (suppressAutoOpen) return
+
     const timer = window.setTimeout(() => {
       if (shouldAutoOpen()) setOpen(true)
     }, AUTO_OPEN_DELAY_MS)
 
     return () => window.clearTimeout(timer)
-  }, [])
+  }, [suppressAutoOpen])
 
   useEffect(() => {
     if (forcedOpen) {

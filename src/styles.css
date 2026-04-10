@@ -1249,3 +1249,115 @@ button, input, textarea, select { font: inherit; }
     justify-content: flex-start;
   }
 }
+
+
+.page--referral-focus .top,
+.page--referral-focus .main,
+.page--referral-focus .footer {
+  filter: blur(10px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.referral-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.referral-gate__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(12px);
+}
+
+.referral-gate__panel {
+  position: relative;
+  z-index: 1;
+  width: min(680px, 100%);
+  padding: 28px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 155, 47, 0.34);
+  background: linear-gradient(180deg, rgba(18, 14, 16, 0.94), rgba(8, 8, 10, 0.9));
+  box-shadow: 0 28px 120px rgba(0, 0, 0, 0.58);
+  text-align: center;
+}
+
+.referral-gate__eyebrow {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(246, 211, 124, 0.95);
+}
+
+.referral-gate__title {
+  margin: 12px 0 0;
+  font-size: clamp(30px, 4vw, 42px);
+  line-height: 1.08;
+}
+
+.referral-gate__title span {
+  color: #f6d37c;
+}
+
+.referral-gate__text {
+  margin: 12px auto 0;
+  max-width: 540px;
+  color: rgba(255, 247, 235, 0.84);
+  line-height: 1.6;
+}
+
+.referral-gate__warning {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(246, 211, 124, 0.16);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 247, 235, 0.92);
+}
+
+.referral-role-switch--gate {
+  margin-top: 18px;
+}
+
+.referral-gate__primary {
+  margin-top: 18px;
+  min-width: min(360px, 100%);
+}
+
+.referral-gate__actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .page--referral-focus .top,
+  .page--referral-focus .main,
+  .page--referral-focus .footer {
+    filter: blur(8px);
+  }
+
+  .referral-gate {
+    padding: 16px;
+  }
+
+  .referral-gate__panel {
+    padding: 22px 18px;
+    border-radius: 22px;
+  }
+
+  .referral-gate__primary {
+    min-width: 100%;
+  }
+
+  .referral-gate__actions {
+    flex-direction: column;
+  }
+}

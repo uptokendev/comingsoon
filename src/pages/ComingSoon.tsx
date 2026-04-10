@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { CookieBar } from '../components/CookieBar'
 import { RecruiterModal } from '../components/RecruiterModal'
@@ -54,8 +54,17 @@ export default function ComingSoon() {
   const [referralRole, setReferralRole] = useState<'creator' | 'trader'>('creator')
   const [referralLoading, setReferralLoading] = useState(false)
   const [referralMessage, setReferralMessage] = useState('')
+  const [checkingReferral, setCheckingReferral] = useState(true)
+  const [referralGateDismissed, setReferralGateDismissed] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
+
+  const referralCodeHint = useMemo(() => {
+    const queryCode = normalizeCode(new URLSearchParams(location.search).get('ref') || '')
+    return queryCode || getStoredReferralCode() || ''
+  }, [location.search])
+
+  const referralGateActive = !referralGateDismissed && (checkingReferral ? Boolean(referralCodeHint) : referralStatus.hasReferral)
 
   useEffect(() => {
     let active = true
@@ -85,9 +94,12 @@ export default function ComingSoon() {
         }
         if (active) {
           setReferralStatus(status)
+          if (!status.hasReferral) setReferralGateDismissed(false)
         }
       } catch (error) {
         if (active) setReferralMessage(error instanceof Error ? error.message : 'Referral check failed.')
+      } finally {
+        if (active) setCheckingReferral(false)
       }
     })()
 
@@ -137,12 +149,16 @@ export default function ComingSoon() {
   }
 
   return (
-    <div className="page">
+    <div className={`page ${referralGateActive ? 'page--referral-focus' : ''}`.trim()}>
       <div className="page__bg" aria-hidden="true" />
       <div className="page__overlay" aria-hidden="true" />
       <SpaceBackground particleCount={220} particleColor="rgba(255, 165, 70, 0.55)" backgroundColor="transparent" className="page__particles" />
 
-      <RecruiterModal forcedOpen={recruiterModalOpen} onCloseForced={() => setRecruiterModalOpen(false)} />
+      <RecruiterModal
+        forcedOpen={recruiterModalOpen}
+        onCloseForced={() => setRecruiterModalOpen(false)}
+        suppressAutoOpen={referralGateActive || checkingReferral}
+      />
 
       <header className="top">
         <div className="top__brand">
@@ -178,33 +194,6 @@ export default function ComingSoon() {
             </div>
           </div>
 
-          {referralStatus.hasReferral ? (
-            <div className="hero-callout hero-callout--referral">
-              <div className="hero-callout__title">Squad invite detected</div>
-              <div className="hero-callout__text">
-                You landed through recruiter code <strong>{referralStatus.code}</strong>. Lock your wallet now so this attribution survives until launch.
-              </div>
-              {referralStatus.isBound ? (
-                <div className="referral-bound">Wallet already linked as <strong>{referralStatus.binding?.role || 'unknown'}</strong>.</div>
-              ) : (
-                <>
-                  <div className="referral-role-switch">
-                    <button type="button" className={`mini-toggle ${referralRole === 'creator' ? 'mini-toggle--active' : ''}`} onClick={() => setReferralRole('creator')}>
-                      I’m a creator
-                    </button>
-                    <button type="button" className={`mini-toggle ${referralRole === 'trader' ? 'mini-toggle--active' : ''}`} onClick={() => setReferralRole('trader')}>
-                      I’m a trader
-                    </button>
-                  </div>
-                  <button type="button" className="hero-callout__button" onClick={() => void bindReferral()} disabled={referralLoading}>
-                    {referralLoading ? 'Waiting for signature...' : 'Connect wallet & lock referral'}
-                  </button>
-                </>
-              )}
-              {referralMessage ? <div className="dashboard-results-meta">{referralMessage}</div> : null}
-            </div>
-          ) : null}
-
           <div className="cta">
             <SocialButton href={X_URL} label="Follow on X" icon={<IconX />} />
             <SocialButton href={TG_URL} label="Join Telegram" icon={<IconTelegram />} />
@@ -228,6 +217,61 @@ export default function ComingSoon() {
           </div>
         </section>
       </main>
+
+
+      {referralGateActive ? (
+        <div className="referral-gate" role="dialog" aria-modal="true" aria-labelledby="referral-gate-title">
+          <div className="referral-gate__backdrop" aria-hidden="true" />
+          <div className="referral-gate__panel">
+            <div className="referral-gate__eyebrow">Squad invite detected</div>
+            <h2 className="referral-gate__title" id="referral-gate-title">
+              Join recruiter <span>{referralStatus.code || referralCodeHint}</span>
+            </h2>
+            <p className="referral-gate__text">
+              You arrived through a recruiter invite. Connect your wallet here as a creator or trader to lock that attribution in.
+            </p>
+            <div className="referral-gate__warning">
+              This flow is for <strong>creators and traders</strong>. Recruiters should use the recruiter application or recruiter sign-in instead.
+            </div>
+
+            {checkingReferral ? (
+              <div className="dashboard-results-meta">Checking recruiter invite…</div>
+            ) : referralStatus.isBound ? (
+              <>
+                <div className="referral-bound">
+                  Wallet already linked as <strong>{referralStatus.binding?.role || 'unknown'}</strong> under recruiter <strong>{referralStatus.code || referralCodeHint}</strong>.
+                </div>
+                <div className="referral-gate__actions">
+                  <button type="button" className="hero-callout__button" onClick={() => setReferralGateDismissed(true)}>
+                    Continue to site
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="referral-role-switch referral-role-switch--gate">
+                  <button type="button" className={`mini-toggle ${referralRole === 'creator' ? 'mini-toggle--active' : ''}`} onClick={() => setReferralRole('creator')}>
+                    I’m a creator
+                  </button>
+                  <button type="button" className={`mini-toggle ${referralRole === 'trader' ? 'mini-toggle--active' : ''}`} onClick={() => setReferralRole('trader')}>
+                    I’m a trader
+                  </button>
+                </div>
+                <button type="button" className="hero-callout__button referral-gate__primary" onClick={() => void bindReferral()} disabled={referralLoading}>
+                  {referralLoading ? 'Waiting for signature...' : 'Connect wallet & lock referral'}
+                </button>
+                <div className="referral-gate__actions">
+                  <button type="button" className="hero-callout__button hero-callout__button--ghost" onClick={() => setReferralGateDismissed(true)}>
+                    Continue without connecting
+                  </button>
+                </div>
+              </>
+            )}
+
+            {referralMessage ? <div className="dashboard-results-meta">{referralMessage}</div> : null}
+          </div>
+        </div>
+      ) : null}
 
       <footer className="footer">
         <div className="footer__left">© {new Date().getFullYear()} MemeWarzone 2026. All rights reserved.</div>
