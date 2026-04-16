@@ -48,6 +48,7 @@ type DashboardResponse = {
   }
   rows?: RecruiterRow[]
   row?: RecruiterRow
+  deletedId?: number
   message?: string
   emailSent?: boolean
   emailError?: string | null
@@ -247,6 +248,15 @@ export default function RecruiterDashboard() {
     setNoteDrafts((prev) => ({ ...prev, [updatedRow.id]: updatedRow.reviewer_notes || '' }))
   }
 
+  const removeRow = (deletedId: number) => {
+    setRows((prev) => prev.filter((row) => row.id !== deletedId))
+    setNoteDrafts((prev) => {
+      const next = { ...prev }
+      delete next[deletedId]
+      return next
+    })
+  }
+
   const runReviewAction = async (
     row: RecruiterRow,
     payload: { status?: string; reviewerNotes?: string | null; resendApprovalEmail?: boolean },
@@ -290,6 +300,47 @@ export default function RecruiterDashboard() {
     }
   }
 
+  const runDeleteAction = async (row: RecruiterRow) => {
+    if (!savedToken.trim()) {
+      setError('Enter the dashboard token to load submissions.')
+      return
+    }
+
+    const shouldDelete = window.confirm(
+      `Delete recruiter ${row.name}? This also removes their referral sessions and bound squad data.`,
+    )
+    if (!shouldDelete) return
+
+    setSavingKey(`${row.id}:delete`)
+    setError('')
+    setActionMessage('')
+
+    try {
+      const response = await fetch('/api/recruiter-dashboard', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-dashboard-token': savedToken.trim(),
+        },
+        body: JSON.stringify({ id: row.id }),
+      })
+
+      const data = (await response.json().catch(() => ({}))) as DashboardResponse
+      if (!response.ok || !data.ok || typeof data.deletedId !== 'number') {
+        throw new Error(data.error || 'Failed to delete recruiter submission.')
+      }
+
+      removeRow(data.deletedId)
+      setActionMessage(data.message || 'Recruiter deleted.')
+      window.setTimeout(() => setActionMessage(''), 1600)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete recruiter submission.'
+      setError(message)
+    } finally {
+      setSavingKey('')
+    }
+  }
+
   return (
     <div className="dashboard-page">
       <div className="dashboard-shell">
@@ -297,7 +348,7 @@ export default function RecruiterDashboard() {
           <div>
             <div className="dashboard-kicker">Private reviewer page</div>
             <h1 className="dashboard-title">Recruiter submissions</h1>
-            <p className="dashboard-subtitle">Protected with a server-side token. You can now review, note, approve, and reject applications here.</p>
+            <p className="dashboard-subtitle">Protected with a server-side token. New applicants are auto-approved and emailed on arrival, and you can still note, resend, reject, or delete them here.</p>
           </div>
           <a className="dashboard-back" href="/">
             ← Back to coming soon
@@ -626,6 +677,14 @@ export default function RecruiterDashboard() {
                         onClick={() => void runReviewAction(row, { status: 'rejected', reviewerNotes: noteDraft }, 'Application rejected.')}
                       >
                         {savingKey === `${row.id}:rejected` ? 'Saving...' : 'Reject'}
+                      </button>
+                      <button
+                        type="button"
+                        className="dashboard-btn dashboard-btn--danger"
+                        disabled={rowBusy}
+                        onClick={() => void runDeleteAction(row)}
+                      >
+                        {savingKey === `${row.id}:delete` ? 'Deleting...' : 'Delete recruiter'}
                       </button>
                     </div>
                   </div>

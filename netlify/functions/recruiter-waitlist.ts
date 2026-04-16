@@ -1,3 +1,6 @@
+import { sendApprovalEmail, type ApprovalEmailRecipient } from './_lib/recruiter-approval'
+import { supabasePatch, supabasePost } from './_lib/supabase'
+
 type RecruiterPayload = {
   name?: string
   xHandle?: string
@@ -16,6 +19,11 @@ type JsonResponse = {
   statusCode: number
   headers: Record<string, string>
   body: string
+}
+
+type RecruiterRow = ApprovalEmailRecipient & {
+  id: number
+  approval_email_send_count?: number | null
 }
 
 const HANDLE_RE = /^[A-Za-z0-9_]{1,30}$/
@@ -77,13 +85,7 @@ export const handler = async (event: any): Promise<JsonResponse> => {
     return json(405, { error: 'Method not allowed.' })
   }
 
-  const SUPABASE_URL = process.env.SUPABASE_URL
-  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
   const RECRUITER_TABLE = process.env.RECRUITER_TABLE || 'recruiter_waitlist'
-
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    return json(500, { error: 'Server is not configured yet.' })
-  }
 
   const checked = validate(parseBody(event))
   if ('error' in checked) {
@@ -93,15 +95,8 @@ export const handler = async (event: any): Promise<JsonResponse> => {
   const payload = checked.payload
 
   try {
-    const response = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${RECRUITER_TABLE}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        Prefer: 'return=minimal',
-      },
-      body: JSON.stringify({
+    const approvedAt = new Date().toISOString()
+    const rows = (await supabasePost(`/rest/v1/${RECRUITER_TABLE}`, {
         name: payload.name,
         x_handle: payload.xHandle,
         telegram_handle: payload.telegramHandle,
@@ -113,17 +108,45 @@ export const handler = async (event: any): Promise<JsonResponse> => {
         notes: payload.notes || null,
         consent_text: 'I agree that MemeWarzone may store this application, review it, and contact me about early recruiter onboarding.',
         source: 'coming-soon-popup',
-        status: 'new',
-      }),
-    })
+        status: 'approved',
+        approved_at: approvedAt,
+        reviewed_at: approvedAt,
+      })) as RecruiterRow[]
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => '')
-      return json(500, { error: errorText || 'Database insert failed.' })
+    const row = rows[0]
+    if (!row) {
+      throw new Error('Recruiter submission could not be created.')
     }
 
-    return json(200, { ok: true })
-  } catch {
-    return json(500, { error: 'Unexpected server error.' })
+    const attemptTimestamp = new Date().toISOString()
+    let emailSent = false
+    let emailError: string | null = null
+
+    try {
+      await sendApprovalEmail(row)
+      emailSent = true
+
+      try {
+        await supabasePatch(`/rest/v1/${RECRUITER_TABLE}?id=eq.${row.id}`, {
+          approval_email_sent_at: attemptTimestamp,
+          approval_email_last_attempt_at: attemptTimestamp,
+          approval_email_last_error: null,
+          approval_email_send_count: Math.max(Number(row.approval_email_send_count || 0), 0) + 1,
+        })
+      } catch {}
+    } catch (error) {
+      emailError = error instanceof Error ? error.message : 'Approval email failed to send.'
+
+      try {
+        await supabasePatch(`/rest/v1/${RECRUITER_TABLE}?id=eq.${row.id}`, {
+          approval_email_last_attempt_at: attemptTimestamp,
+          approval_email_last_error: emailError,
+        })
+      } catch {}
+    }
+
+    return json(200, { ok: true, emailSent, emailError })
+  } catch (error) {
+    return json(500, { error: error instanceof Error ? error.message : 'Unexpected server error.' })
   }
 }

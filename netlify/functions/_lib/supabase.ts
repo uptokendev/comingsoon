@@ -78,3 +78,21 @@ export async function supabasePost(path: string, body: Record<string, unknown> |
 
   return response.json().catch(() => [])
 }
+
+export async function supabaseDelete(path: string) {
+  const { SUPABASE_URL } = getSupabaseConfig()
+  const response = await fetch(`${SUPABASE_URL}${path}`, {
+    method: 'DELETE',
+    headers: {
+      ...authHeaders(),
+      Prefer: 'return=representation',
+    },
+  })
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '')
+    throw new Error(text || 'Database delete failed.')
+  }
+
+  return response.json().catch(() => [])
+}

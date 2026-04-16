@@ -87,15 +87,14 @@ API endpoints:
 - `/api/ref-nonce`
 - `/api/ref-bind`
 
-## Approval flow
+## Recruiter intake flow
 
 1. Recruiter applies through the popup.
-2. You review them in Supabase or your reviewer page.
-3. Set `status = approved` for the application.
-4. The reviewer endpoint sends a branded approval email through Resend with a direct link to `/recruiter/portal`.
-5. For already-approved recruiters, the reviewer page can manually resend the approval email.
-6. On first successful wallet sign-in, the portal auto-generates a unique recruiter code if one does not exist yet.
-7. Recruiters can later change that code inside their portal if the new code is still free.
+2. The submission is auto-approved immediately.
+3. The waitlist endpoint sends a branded access email through Resend with a direct link to `/recruiter/portal`.
+4. The reviewer page can still add internal notes, resend the access email, reject a recruiter, or delete them entirely.
+5. On first successful wallet sign-in, the portal auto-generates a unique recruiter code if one does not exist yet.
+6. Recruiters can later change that code inside their portal if the new code is still free.
 
 ## Referral flow
 

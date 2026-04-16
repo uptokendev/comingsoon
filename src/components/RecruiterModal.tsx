@@ -168,7 +168,7 @@ export function RecruiterModal({ forcedOpen, onCloseForced, suppressAutoOpen = f
         body: JSON.stringify(payload),
       })
 
-      const data = (await response.json().catch(() => ({}))) as { error?: string; ok?: boolean }
+      const data = (await response.json().catch(() => ({}))) as { error?: string; ok?: boolean; emailSent?: boolean }
 
       if (!response.ok || !data.ok) {
         throw new Error(data.error || 'Submission failed. Please try again.')
@@ -177,7 +177,11 @@ export function RecruiterModal({ forcedOpen, onCloseForced, suppressAutoOpen = f
       window.localStorage.setItem(SUBMITTED_KEY, '1')
       window.localStorage.removeItem(DISMISSED_KEY)
       window.localStorage.removeItem(FORM_DRAFT_KEY)
-      setSuccess('Application received. We will contact selected recruiters first as onboarding opens.')
+      setSuccess(
+        data.emailSent === false
+          ? 'Application received. Your recruiter profile is saved. If your access email does not arrive soon, message us and we will resend it.'
+          : 'Application received. Your recruiter access email is on the way.',
+      )
       setForm(INITIAL_FORM)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Submission failed. Please try again.'
