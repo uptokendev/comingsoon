@@ -100,7 +100,7 @@ export default function WarMissionsPage() {
       <div className="war-missions-overlay" aria-hidden="true" />
 
       <header className="war-missions-top">
-        <Link to="/" className="war-missions-brand" aria-label="MemeWarzone home">
+        <Link to="/" className="war-missions-brand" aria-label="MemeWarzone War Missions home">
           <img src="/logo.png" alt="MemeWarzone" />
         </Link>
         <nav className="war-missions-nav" aria-label="War Missions navigation">
