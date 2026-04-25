@@ -1,4 +1,6 @@
--- MemeWarzone War Missions seed data
+-- MemeWarzone War Missions seed data - FIXED
+-- Run after supabase/migrations/20260424_war_missions_schema.sql
+-- This file uses clean dollar-quoted JSONB blocks. Do not escape quotes inside JSON payloads.
 
 insert into public.wm_quest_categories (slug, title, description, display_order, active)
 values
@@ -131,25 +133,21 @@ insert into public.wm_badge_templates (
 )
 values
   ('oathkeeper', 'Oathkeeper', 'Connected a wallet and signed the War Missions oath.', 'identity', 'common', 'oath', $json${"quest_slugs":["take-the-oath"]}$json$::jsonb, 10, true),
-
   ('start-here-cleared', 'Start Here Cleared', 'Completed every Start Here onboarding quest.', 'mission', 'uncommon', 'start', $json${"category_slug":"start-here","all_category_quests":true}$json$::jsonb, 100, true),
   ('daily-warpath-cleared', 'Daily Warpath Cleared', 'Completed the Daily Warpath bonus quest.', 'mission', 'uncommon', 'daily', $json${"quest_slugs":["complete-daily-warpath"]}$json$::jsonb, 110, true),
   ('black-market-operator', 'Black Market Operator', 'Completed at least one Black Market Contract.', 'mission', 'rare', 'market', $json${"category_slug":"black-market-contracts","min_verified":1}$json$::jsonb, 120, true),
   ('recon-certified', 'Recon Certified', 'Passed every Recon & Interrogation briefing.', 'mission', 'rare', 'recon', $json${"category_slug":"recon","all_category_quests":true}$json$::jsonb, 130, true),
   ('reinforcements-operator', 'Reinforcements Operator', 'Completed an Operation: Reinforcements quest.', 'mission', 'rare', 'reinforce', $json${"category_slug":"reinforcements","min_verified":1}$json$::jsonb, 140, true),
-
   ('xp-500', '500 XP', 'Earned 500 active XP.', 'xp', 'common', 'xp', $json${"xp_min":500}$json$::jsonb, 200, true),
   ('xp-1000', '1,000 XP', 'Earned 1,000 active XP.', 'xp', 'common', 'xp', $json${"xp_min":1000}$json$::jsonb, 210, true),
   ('xp-5000', '5,000 XP', 'Earned 5,000 active XP.', 'xp', 'uncommon', 'xp', $json${"xp_min":5000}$json$::jsonb, 220, true),
   ('xp-10000', '10,000 XP', 'Earned 10,000 active XP.', 'xp', 'rare', 'xp', $json${"xp_min":10000}$json$::jsonb, 230, true),
   ('xp-25000', '25,000 XP', 'Earned 25,000 active XP.', 'xp', 'epic', 'xp', $json${"xp_min":25000}$json$::jsonb, 240, true),
   ('xp-50000', '50,000 XP', 'Earned 50,000 active XP.', 'xp', 'legendary', 'xp', $json${"xp_min":50000}$json$::jsonb, 250, true),
-
   ('streak-3', '3-Day Streak', 'Built a 3-day Warpath streak.', 'streak', 'common', 'streak', $json${"streak_min":3}$json$::jsonb, 300, true),
   ('streak-7', '7-Day Streak', 'Built a 7-day Warpath streak.', 'streak', 'uncommon', 'streak', $json${"streak_min":7}$json$::jsonb, 310, true),
   ('streak-14', '14-Day Streak', 'Built a 14-day Warpath streak.', 'streak', 'rare', 'streak', $json${"streak_min":14}$json$::jsonb, 320, true),
   ('streak-30', '30-Day Streak', 'Built a 30-day Warpath streak.', 'streak', 'legendary', 'streak', $json${"streak_min":30}$json$::jsonb, 330, true),
-
   ('recruiter-approved', 'Recruiter Approved', 'Accepted into the Recruiter Program.', 'recruiter', 'uncommon', 'recruiter', $json${"role":"recruiter"}$json$::jsonb, 400, true),
   ('fireteam-2', 'Fireteam Builder', 'Recruited 2 verified users.', 'recruiter', 'uncommon', 'recruits', $json${"verified_recruits_min":2}$json$::jsonb, 410, true),
   ('squad-4', 'Squad Builder', 'Recruited 4 verified users.', 'recruiter', 'rare', 'recruits', $json${"verified_recruits_min":4}$json$::jsonb, 420, true),
@@ -169,26 +167,22 @@ on conflict (slug) do update set
 
 with quiz_seed as (
   select * from (values
-    ('read-the-basics', 'What is MemeWarzone built around?', $json${"a":"Creator-first meme launches and competitive discovery","b":"Private OTC token sales","c":"NFT-only profile badges","d":"Centralized exchange order books"}$json$::jsonb, 'a', 'MemeWarzone turns meme launches into open launch events.'),
+    ('read-the-basics', 'What is MemeWarzone built around?', $json${"a":"Creator-first meme launches and community discovery","b":"Private OTC token sales","c":"NFT-only profile badges","d":"Centralized exchange order books"}$json$::jsonb, 'a', 'MemeWarzone turns meme launches into open launch events.'),
     ('read-the-basics', 'What action drives discovery in the broader platform?', $json${"a":"UpVotes","b":"Hidden invites","c":"Manual spreadsheet scoring","d":"One-time whitelist forms"}$json$::jsonb, 'a', 'UpVotes are part of the platform discovery loop.'),
     ('read-the-basics', 'What should War Missions use as the primary identity?', $json${"a":"Wallet address","b":"Email only","c":"Telegram username only","d":"Browser user-agent"}$json$::jsonb, 'a', 'Wallet identity anchors quest completions and rewards.'),
     ('read-the-basics', 'What stores XP grants?', $json${"a":"XP ledger","b":"A single editable total only","c":"Local storage","d":"A Discord role name"}$json$::jsonb, 'a', 'The ledger records every active or revoked XP grant.'),
-
     ('leagues-airdrop-briefing', 'What do leagues create for MemeWarzone communities?', $json${"a":"Recurring competition loops","b":"Permanent trading bans","c":"Static landing pages","d":"One private chat room"}$json$::jsonb, 'a', 'Leagues bring communities back through recurring competition.'),
     ('leagues-airdrop-briefing', 'Why are snapshots useful?', $json${"a":"They preserve ranked results for a period","b":"They delete all XP history","c":"They replace wallet signatures","d":"They hide winners"}$json$::jsonb, 'a', 'Snapshots preserve leaderboard state for prizes and review.'),
     ('leagues-airdrop-briefing', 'Who should leaderboards exclude?', $json${"a":"Banned users and revoked XP","b":"Everyone with a wallet","c":"Users with badges","d":"Recruiters only"}$json$::jsonb, 'a', 'Leaderboards must not count excluded users or revoked XP.'),
     ('leagues-airdrop-briefing', 'What is an airdrop-facing quest system preparing for?', $json${"a":"Attribution and eligibility rules","b":"Unlimited unreviewed rewards","c":"No wallet verification","d":"Manual screenshots only"}$json$::jsonb, 'a', 'Quest completions become an eligibility and attribution layer.'),
-
     ('fees-treasury-objectives', 'Why does War Missions avoid automatic BNB payouts in v1?', $json${"a":"Rewards need review and operational control first","b":"BNB cannot be used on-chain","c":"Quests cannot earn XP","d":"Wallets are not supported"}$json$::jsonb, 'a', 'The first version focuses on controlled XP and review.'),
     ('fees-treasury-objectives', 'What should prize flows use before payment?', $json${"a":"Admin approval and winner status","b":"Anonymous browser votes only","c":"Untracked direct transfers","d":"Local CSV totals only"}$json$::jsonb, 'a', 'Prize state needs reviewable statuses before payout.'),
     ('fees-treasury-objectives', 'What status should revoked XP have?', $json${"a":"revoked","b":"active","c":"paid","d":"draft"}$json$::jsonb, 'a', 'Revoked ledger rows must stop contributing to totals.'),
     ('fees-treasury-objectives', 'What makes the incentive loop safer?', $json${"a":"Reason codes and review queues","b":"Unlimited posting rewards","c":"No admin audit log","d":"Ignoring duplicate content"}$json$::jsonb, 'a', 'Reason codes and review queues reduce abuse risk.'),
-
     ('security-safety-recon', 'Can one social account be reused across multiple wallets?', $json${"a":"No","b":"Yes, always","c":"Only for high-XP quests","d":"Only after a quiz"}$json$::jsonb, 'a', 'Social identity reuse must be blocked.'),
     ('security-safety-recon', 'What should happen to suspicious high-XP submissions?', $json${"a":"Manual review","b":"Instant payout","c":"Silent deletion","d":"Leaderboard boost"}$json$::jsonb, 'a', 'High-XP and suspicious submissions require stronger review.'),
     ('security-safety-recon', 'Can users approve their own quests?', $json${"a":"No","b":"Yes","c":"Only once per day","d":"Only without a wallet"}$json$::jsonb, 'a', 'Admin-only review must be protected.'),
     ('security-safety-recon', 'What should failed verification show?', $json${"a":"Clear user messages","b":"No feedback","c":"Only raw stack traces","d":"A fake success"}$json$::jsonb, 'a', 'Clear errors help users recover without weakening review.'),
-
     ('read-recruiter-program', 'What does a verified recruit require?', $json${"a":"Wallet plus onboarding verification","b":"A raw page click only","c":"A copied invite code without wallet","d":"An unverified username"}$json$::jsonb, 'a', 'Recruit milestones count verified users, not raw clicks.'),
     ('read-recruiter-program', 'When should recruiter attribution link to a wallet?', $json${"a":"On wallet connect after referral tracking","b":"Only after payout","c":"Never","d":"Only in a spreadsheet"}$json$::jsonb, 'a', 'Attribution persists before wallet connect, then links to the wallet.'),
     ('read-recruiter-program', 'Can the same recruit count twice for one recruiter?', $json${"a":"No","b":"Yes","c":"Only if they use Telegram","d":"Only after 30 days"}$json$::jsonb, 'a', 'Recruit milestones must dedupe recruits.'),
@@ -218,4 +212,9 @@ on conflict (quest_template_id, question) do update set
   explanation = excluded.explanation,
   active = true;
 
-
+select
+  (select count(*) from public.wm_quest_categories) as category_count,
+  (select count(*) from public.wm_quest_templates) as quest_template_count,
+  (select count(*) from public.wm_quest_instances) as quest_instance_count,
+  (select count(*) from public.wm_quiz_questions) as quiz_question_count,
+  (select count(*) from public.wm_badge_templates) as badge_template_count;

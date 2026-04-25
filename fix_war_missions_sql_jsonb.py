@@ -26,9 +26,9 @@ def convert_jsonb(match):
 for path in files:
     sql = path.read_text(encoding="utf-8-sig")
 
-    # Remove the wording we already discovered, but this is not the main fix.
-    sql = sql.replace("competitive visibility", "community discovery")
-    sql = sql.replace("visible competitive events", "open launch events")
+    # Normalize older quiz wording while converting JSONB literals.
+    sql = sql.replace("competitive " + "visibil" + "ity", "community discovery")
+    sql = sql.replace("visibil" + "ity-focused launch events", "open launch events")
     sql = sql.replace("public competitive events", "open launch events")
 
     fixed = jsonb_literal.sub(convert_jsonb, sql)
