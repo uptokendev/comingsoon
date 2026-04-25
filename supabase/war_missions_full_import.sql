@@ -558,7 +558,7 @@ on conflict (slug) do update set
 
 with quiz_seed as (
   select * from (values
-    ('read-the-basics', 'What is MemeWarzone built around?', '{"a":"Creator-first meme launches and competitive visibility","b":"Private OTC token sales","c":"NFT-only profile badges","d":"Centralized exchange order books"}'::jsonb, 'a', 'MemeWarzone turns meme launches into visible competitive events.'),
+    ('read-the-basics', 'What is MemeWarzone built around?', '{"a":"Creator-first meme launches and competitive discovery","b":"Private OTC token sales","c":"NFT-only profile badges","d":"Centralized exchange order books"}'::jsonb, 'a', 'MemeWarzone turns meme launches into open launch events.'),
     ('read-the-basics', 'What action drives discovery in the broader platform?', '{"a":"UpVotes","b":"Hidden invites","c":"Manual spreadsheet scoring","d":"One-time whitelist forms"}'::jsonb, 'a', 'UpVotes are part of the platform discovery loop.'),
     ('read-the-basics', 'What should War Missions use as the primary identity?', '{"a":"Wallet address","b":"Email only","c":"Telegram username only","d":"Browser user-agent"}'::jsonb, 'a', 'Wallet identity anchors quest completions and rewards.'),
     ('read-the-basics', 'What stores XP grants?', '{"a":"XP ledger","b":"A single editable total only","c":"Local storage","d":"A Discord role name"}'::jsonb, 'a', 'The ledger records every active or revoked XP grant.'),
@@ -606,4 +606,6 @@ on conflict (quest_template_id, question) do update set
   correct_answer_key = excluded.correct_answer_key,
   explanation = excluded.explanation,
   active = true;
+
+
 
