@@ -127,6 +127,34 @@ create table if not exists public.wm_daily_progress (
   unique(user_id, date_utc)
 );
 
+create table if not exists public.wm_badge_templates (
+  id uuid primary key default gen_random_uuid(),
+  slug text unique not null,
+  title text not null,
+  description text,
+  type text not null check (type in ('identity', 'mission', 'xp', 'streak', 'recruiter', 'manual')),
+  rarity text not null default 'common' check (rarity in ('common', 'uncommon', 'rare', 'epic', 'legendary')),
+  icon_key text not null,
+  criteria jsonb not null default '{}',
+  display_order int not null default 0,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.wm_user_badges (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.wm_users(id) on delete cascade,
+  badge_template_id uuid not null references public.wm_badge_templates(id) on delete cascade,
+  source text not null default 'auto' check (source in ('auto', 'admin', 'system')),
+  reason text,
+  metadata jsonb not null default '{}',
+  awarded_at timestamptz not null default now(),
+  awarded_by uuid references public.wm_users(id) on delete set null,
+  revoked_at timestamptz,
+  unique(user_id, badge_template_id)
+);
+
 create table if not exists public.wm_social_metric_snapshots (
   id uuid primary key default gen_random_uuid(),
   quest_completion_id uuid not null references public.wm_quest_completions(id) on delete cascade,
@@ -139,6 +167,27 @@ create table if not exists public.wm_social_metric_snapshots (
   impression_count int not null default 0,
   checked_at timestamptz not null default now(),
   raw_payload jsonb not null default '{}'
+);
+
+create table if not exists public.wm_submission_fingerprints (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.wm_users(id) on delete cascade,
+  quest_completion_id uuid references public.wm_quest_completions(id) on delete cascade,
+  fingerprint_type text not null,
+  fingerprint text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.wm_verification_logs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.wm_users(id) on delete set null,
+  quest_completion_id uuid references public.wm_quest_completions(id) on delete set null,
+  provider text not null,
+  verification_type text not null,
+  status text not null,
+  message text,
+  metadata jsonb not null default '{}',
+  created_at timestamptz not null default now()
 );
 
 create table if not exists public.wm_quiz_questions (
@@ -262,10 +311,24 @@ create table if not exists public.wm_admin_audit_log (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.wm_rate_limit_events (
+  id uuid primary key default gen_random_uuid(),
+  action text not null,
+  key_hash text not null,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists wm_quest_templates_category_idx on public.wm_quest_templates(category_id);
 create index if not exists wm_quest_instances_template_idx on public.wm_quest_instances(quest_template_id);
+create unique index if not exists wm_quest_instances_template_period_start_idx on public.wm_quest_instances(quest_template_id, period_type, period_start) where period_start is not null;
 create index if not exists wm_completions_user_status_idx on public.wm_quest_completions(user_id, status);
 create index if not exists wm_xp_ledger_user_status_idx on public.wm_xp_ledger(user_id, status);
+create index if not exists wm_badge_templates_active_order_idx on public.wm_badge_templates(active, display_order);
+create index if not exists wm_user_badges_user_awarded_idx on public.wm_user_badges(user_id, revoked_at, awarded_at desc);
+create unique index if not exists wm_submission_fingerprints_unique_idx on public.wm_submission_fingerprints(fingerprint_type, fingerprint);
+create index if not exists wm_verification_logs_completion_idx on public.wm_verification_logs(quest_completion_id, created_at desc);
+create index if not exists wm_rate_limit_events_lookup_idx on public.wm_rate_limit_events(action, key_hash, created_at desc);
+create unique index if not exists wm_quiz_questions_template_question_idx on public.wm_quiz_questions(quest_template_id, question);
 create index if not exists wm_referral_attributions_recruiter_idx on public.wm_referral_attributions(recruiter_user_id, status);
 create index if not exists wm_notifications_status_priority_idx on public.wm_admin_notifications(status, priority, created_at desc);
 
@@ -279,7 +342,11 @@ alter table public.wm_quest_completions enable row level security;
 alter table public.wm_quest_requirements enable row level security;
 alter table public.wm_xp_ledger enable row level security;
 alter table public.wm_daily_progress enable row level security;
+alter table public.wm_badge_templates enable row level security;
+alter table public.wm_user_badges enable row level security;
 alter table public.wm_social_metric_snapshots enable row level security;
+alter table public.wm_submission_fingerprints enable row level security;
+alter table public.wm_verification_logs enable row level security;
 alter table public.wm_quiz_questions enable row level security;
 alter table public.wm_quiz_attempts enable row level security;
 alter table public.wm_recruiter_applications enable row level security;
@@ -290,6 +357,7 @@ alter table public.wm_leaderboard_snapshots enable row level security;
 alter table public.wm_prize_pools enable row level security;
 alter table public.wm_prize_winners enable row level security;
 alter table public.wm_admin_audit_log enable row level security;
+alter table public.wm_rate_limit_events enable row level security;
 
 -- Public read surfaces. Mutations should go through service-role functions until wallet auth is wired.
 drop policy if exists "wm_public_read_categories" on public.wm_quest_categories;
@@ -300,6 +368,9 @@ create policy "wm_public_read_templates" on public.wm_quest_templates for select
 
 drop policy if exists "wm_public_read_instances" on public.wm_quest_instances;
 create policy "wm_public_read_instances" on public.wm_quest_instances for select using (active = true);
+
+drop policy if exists "wm_public_read_badge_templates" on public.wm_badge_templates;
+create policy "wm_public_read_badge_templates" on public.wm_badge_templates for select using (active = true);
 
 drop policy if exists "wm_public_read_leaderboards" on public.wm_leaderboard_snapshots;
 create policy "wm_public_read_leaderboards" on public.wm_leaderboard_snapshots for select using (true);

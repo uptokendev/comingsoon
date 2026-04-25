@@ -1,7 +1,11 @@
 node_modules
 .dist
 /dist
+dist
 .env
 .DS_Store
 .vscode
 *.log
+
+# Local Netlify folder
+.netlify
