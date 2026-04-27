@@ -1,0 +1,470 @@
+:root {
+  --mwz-bg-primary: #0b0d10;
+  --mwz-text-primary: #f2f2ee;
+  --mwz-ember: #f06a1a;
+  --mwz-ember-rgb: 240, 106, 26;
+  --mwz-nvg: #39e317;
+  --mwz-nvg-rgb: 57, 227, 23;
+  --mwz-steel-rgb: 58, 64, 72;
+  --mwz-card-bg: linear-gradient(160deg, rgba(19, 23, 28, 0.86), rgba(11, 13, 16, 0.94));
+  --mwz-front-border: rgba(240, 106, 26, 0.25);
+  --mwz-front-border-soft: rgba(242, 242, 238, 0.1);
+  --mwz-muted-front: rgba(214, 218, 211, 0.68);
+  --mwz-muted-front-2: rgba(214, 218, 211, 0.48);
+}
+
+body.mwz-app-preview-ready .mwz-app-preview {
+  display: none !important;
+}
+
+.page--war-room {
+  background: var(--mwz-bg-primary) !important;
+}
+
+.page--war-room .page__bg {
+  opacity: 0.38 !important;
+  filter: saturate(0.78) contrast(1.08) brightness(0.7);
+}
+
+.page--war-room .page__overlay {
+  background:
+    linear-gradient(180deg, rgba(5, 7, 9, 0.88) 0%, rgba(7, 9, 11, 0.82) 38%, rgba(7, 8, 10, 0.96) 100%),
+    radial-gradient(1000px 460px at 50% 88%, rgba(var(--mwz-ember-rgb), 0.22), transparent 58%),
+    radial-gradient(560px 280px at 15% 92%, rgba(var(--mwz-nvg-rgb), 0.08), transparent 62%),
+    radial-gradient(560px 280px at 85% 90%, rgba(var(--mwz-ember-rgb), 0.12), transparent 64%) !important;
+}
+
+.top--war-room {
+  position: sticky !important;
+  top: 10px !important;
+  z-index: 25 !important;
+  max-width: calc(100% - 20px) !important;
+  min-height: 70px !important;
+  margin-top: 0 !important;
+  padding: 12px 18px !important;
+  border: 1px solid rgba(242, 242, 238, 0.14) !important;
+  border-radius: 22px !important;
+  background: linear-gradient(180deg, rgba(23, 26, 31, 0.9), rgba(11, 13, 16, 0.94)) !important;
+  box-shadow: 0 22px 50px -30px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(var(--mwz-ember-rgb), 0.08) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+.top__logo {
+  height: 48px !important;
+  width: auto !important;
+  filter: drop-shadow(0 0 18px rgba(var(--mwz-ember-rgb), 0.28));
+}
+
+.top__brand::after {
+  content: "MemeWarzone\A Prepare Mode Terminal";
+  white-space: pre;
+  margin-left: 8px;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--mwz-text-primary);
+}
+
+.top__brand::first-line {
+  color: var(--mwz-text-primary);
+}
+
+.top__pill {
+  border-color: rgba(var(--mwz-ember-rgb), 0.28) !important;
+  background: rgba(var(--mwz-ember-rgb), 0.08) !important;
+  color: var(--mwz-ember) !important;
+}
+
+.top__nav {
+  padding: 4px !important;
+  border: 1px solid rgba(242, 242, 238, 0.08);
+  border-radius: 16px;
+  background: rgba(4, 6, 8, 0.46);
+}
+
+.top__nav a,
+.top__nav button {
+  min-height: 38px !important;
+  border-radius: 12px !important;
+  border-color: transparent !important;
+  background: transparent !important;
+  color: var(--mwz-muted-front) !important;
+  font-weight: 800 !important;
+  font-size: 13px !important;
+}
+
+.top__nav a:hover,
+.top__nav button:hover {
+  background: rgba(19, 23, 28, 0.78) !important;
+  color: var(--mwz-text-primary) !important;
+  border-color: rgba(var(--mwz-ember-rgb), 0.32) !important;
+}
+
+.main--war-room {
+  padding-top: 14px !important;
+}
+
+.war-room-shell {
+  width: min(1360px, 100%) !important;
+  display: grid;
+  grid-template-columns: 226px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.war-room-shell::before {
+  content: "";
+  position: sticky;
+  top: 96px;
+  min-height: calc(100vh - 118px);
+  border: 1px solid rgba(242, 242, 238, 0.12);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(16, 19, 23, 0.86), rgba(7, 9, 11, 0.94)),
+    linear-gradient(90deg, rgba(var(--mwz-ember-rgb), 0.07), transparent 32%);
+  box-shadow: 0 30px 80px -44px rgba(0, 0, 0, 0.98);
+  backdrop-filter: blur(14px);
+}
+
+.war-room-shell::after {
+  content: "⚔  Launchpad\A🏆  Battle Leagues\A🪖  Recruiters\A🎯  Airdrops\A🔥  Squads\A🛡  Security\A\A SYSTEM STATUS\A Recruiter intake online.\A Prepare Mode loading.";
+  white-space: pre-line;
+  position: sticky;
+  top: 128px;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: start;
+  padding: 178px 18px 18px;
+  color: var(--mwz-muted-front);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 2.12;
+  pointer-events: none;
+}
+
+.war-hero,
+.section-block,
+.cta {
+  grid-column: 2;
+}
+
+.war-hero {
+  min-height: unset !important;
+  grid-template-columns: minmax(0, 1fr) 420px !important;
+  gap: 14px !important;
+  align-items: stretch !important;
+  margin-bottom: 14px;
+}
+
+.war-hero__copy {
+  display: grid;
+  align-content: center;
+  min-height: 460px;
+  padding: 28px !important;
+  border: 1px solid var(--mwz-front-border-soft);
+  border-radius: 26px;
+  background: var(--mwz-card-bg);
+  box-shadow: 0 30px 80px -44px rgba(0, 0, 0, 0.98);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+  position: relative;
+}
+
+.war-hero__copy::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(var(--mwz-nvg-rgb), 0.08), transparent 26%),
+    radial-gradient(circle at 86% 82%, rgba(var(--mwz-ember-rgb), 0.14), transparent 34%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 12px);
+}
+
+.war-hero__copy > * {
+  position: relative;
+  z-index: 1;
+}
+
+.badge,
+.section-kicker,
+.war-card__eyebrow {
+  border-color: rgba(var(--mwz-ember-rgb), 0.24) !important;
+  background: rgba(var(--mwz-ember-rgb), 0.08) !important;
+  color: var(--mwz-ember) !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.16em !important;
+}
+
+.h1 {
+  max-width: 820px;
+  font-size: clamp(38px, 5.5vw, 70px) !important;
+  line-height: 0.98 !important;
+  letter-spacing: -0.045em !important;
+}
+
+.h1__accent {
+  background: none !important;
+  color: var(--mwz-ember) !important;
+  text-shadow: 0 0 24px rgba(var(--mwz-ember-rgb), 0.18) !important;
+}
+
+.lead,
+.section-copy,
+.war-card__text,
+.flow-step__text,
+.timeline-step__text,
+.league-tile span {
+  color: var(--mwz-muted-front) !important;
+}
+
+.hero-primary,
+.hero-secondary,
+.link-pill,
+.hero-callout__button {
+  min-height: 42px !important;
+  border-radius: 13px !important;
+  border: 1px solid rgba(var(--mwz-ember-rgb), 0.32) !important;
+  background: linear-gradient(135deg, rgba(71, 78, 88, 0.22), rgba(20, 24, 29, 0.72)) !important;
+  color: var(--mwz-text-primary) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055), 0 18px 40px -28px rgba(0, 0, 0, 0.95) !important;
+  font-size: 12px !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.hero-primary,
+.hero-callout__button:not(.hero-callout__button--ghost) {
+  border-color: rgba(var(--mwz-ember-rgb), 0.48) !important;
+  background: linear-gradient(135deg, rgba(var(--mwz-ember-rgb), 0.26), rgba(255, 72, 24, 0.16)) !important;
+}
+
+.war-hero__meta {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.meta-chip {
+  border-color: var(--mwz-front-border-soft) !important;
+  background: rgba(4, 6, 8, 0.42) !important;
+  border-radius: 16px !important;
+}
+
+.meta-chip strong,
+.panel-stat__value,
+.league-tile strong,
+.timeline-step__phase {
+  color: var(--mwz-ember) !important;
+}
+
+.meta-chip:nth-child(3)::after {
+  content: "\A Airdrops + Squad Pool";
+  white-space: pre-line;
+  display: block;
+  margin-top: 4px;
+  color: var(--mwz-muted-front-2);
+}
+
+.command-panel {
+  align-self: stretch !important;
+  min-height: 460px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-radius: 24px !important;
+  border-color: var(--mwz-front-border-soft) !important;
+  background: var(--mwz-card-bg) !important;
+  box-shadow: 0 30px 80px -44px rgba(0, 0, 0, 0.98) !important;
+}
+
+.command-panel__top {
+  border-color: rgba(242, 242, 238, 0.1) !important;
+}
+
+.command-panel__body {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+.radar-card {
+  flex: 1 !important;
+  min-height: 310px !important;
+  border-color: rgba(var(--mwz-ember-rgb), 0.16) !important;
+  background:
+    radial-gradient(circle at center, rgba(var(--mwz-nvg-rgb), 0.08), transparent 30%),
+    repeating-radial-gradient(circle at center, rgba(var(--mwz-ember-rgb), 0.11) 0 1px, transparent 1px 44px),
+    linear-gradient(135deg, rgba(6, 8, 10, 0.98), rgba(23, 26, 31, 0.78)) !important;
+}
+
+.radar-card__logo img {
+  width: min(330px, 70%) !important;
+  max-height: 84% !important;
+  object-fit: contain !important;
+}
+
+.radar-card__tag {
+  left: 50% !important;
+  bottom: 18px !important;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: rgba(0, 0, 0, 0.72) !important;
+}
+
+.panel-grid {
+  margin-top: 0 !important;
+}
+
+.panel-stat {
+  border-radius: 16px !important;
+  border-color: rgba(242, 242, 238, 0.1) !important;
+  background: rgba(4, 6, 8, 0.44) !important;
+}
+
+.section-block {
+  margin-top: 14px !important;
+  padding: 22px !important;
+  border-radius: 24px !important;
+  border-color: var(--mwz-front-border-soft) !important;
+  background: var(--mwz-card-bg) !important;
+  box-shadow: 0 30px 80px -44px rgba(0, 0, 0, 0.98) !important;
+}
+
+.section-block::before {
+  background:
+    linear-gradient(135deg, rgba(var(--mwz-nvg-rgb), 0.04), transparent 30%),
+    linear-gradient(315deg, rgba(var(--mwz-ember-rgb), 0.08), transparent 36%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.014) 0 1px, transparent 1px 14px) !important;
+}
+
+.problem-grid,
+.role-grid,
+.feature-grid,
+.security-grid,
+.faq-grid,
+.flow-grid,
+.league-strip {
+  gap: 12px !important;
+}
+
+.war-card,
+.flow-step,
+.league-tile,
+.timeline-step,
+.recruiter-cta-card {
+  border-radius: 18px !important;
+  border-color: rgba(242, 242, 238, 0.1) !important;
+  background: linear-gradient(160deg, rgba(19, 23, 28, 0.78), rgba(11, 13, 16, 0.92)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+}
+
+.war-card:hover,
+.flow-step:hover,
+.league-tile:hover {
+  transform: translateY(-3px);
+  border-color: rgba(var(--mwz-ember-rgb), 0.42) !important;
+  box-shadow: 0 0 24px rgba(var(--mwz-ember-rgb), 0.12), 0 24px 50px -34px rgba(0, 0, 0, 1) !important;
+}
+
+.war-card__icon {
+  border-color: rgba(var(--mwz-ember-rgb), 0.22) !important;
+  background: rgba(var(--mwz-ember-rgb), 0.1) !important;
+}
+
+.role-grid .war-card,
+.feature-grid .war-card,
+.security-grid .war-card,
+.faq-grid .war-card {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+}
+
+.role-grid .war-card ul {
+  margin-top: auto !important;
+}
+
+.recruiter-layout {
+  grid-template-columns: minmax(0, 1fr) 340px !important;
+}
+
+.recruiter-cta-card {
+  border-color: rgba(var(--mwz-nvg-rgb), 0.18) !important;
+}
+
+.recruiter-cta-card__big {
+  color: var(--mwz-nvg) !important;
+}
+
+.cta {
+  margin-top: 14px !important;
+  padding: 16px !important;
+  border: 1px solid rgba(242, 242, 238, 0.1);
+  border-radius: 22px;
+  background: rgba(11, 13, 16, 0.72);
+}
+
+.footer--war-room {
+  max-width: min(1360px, calc(100% - 20px)) !important;
+}
+
+@media (max-width: 1120px) {
+  .war-room-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .war-room-shell::before,
+  .war-room-shell::after {
+    display: none;
+  }
+
+  .war-hero,
+  .section-block,
+  .cta {
+    grid-column: 1;
+  }
+
+  .war-hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  .war-hero__copy,
+  .command-panel {
+    min-height: auto !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .top--war-room {
+    position: relative !important;
+    top: 0 !important;
+    max-width: calc(100% - 16px) !important;
+    flex-wrap: wrap;
+  }
+
+  .top__brand::after {
+    font-size: 13px;
+  }
+
+  .top__pill {
+    width: 100%;
+    text-align: center;
+  }
+
+  .war-hero__copy {
+    text-align: left !important;
+    padding: 20px !important;
+  }
+
+  .war-hero__meta,
+  .problem-grid,
+  .role-grid,
+  .feature-grid,
+  .security-grid,
+  .faq-grid,
+  .flow-grid,
+  .league-strip,
+  .panel-grid,
+  .recruiter-layout {
+    grid-template-columns: 1fr !important;
+  }
+}
