@@ -151,6 +151,10 @@
       font-size: 13px;
     }
 
+    .cta[aria-label="MemeWarzone social links"] {
+      display: none !important;
+    }
+
     @media (max-width: 980px) {
       .command-panel {
         min-height: auto;
