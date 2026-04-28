@@ -1094,7 +1094,7 @@ export default function ComingSoon() {
           <section className="section-block" id="security" aria-labelledby="security-title">
             <div className="section-head">
               <div className="section-kicker">Built against rug culture</div>
-              <h2 className="section-title" id="security-title">The page should say what serious users need to hear.</h2>
+              <h2 className="section-title" id="security-title">Rug culture gets no home field here.</h2>
               <p className="section-copy">
                 The trust section keeps the copy simple: no dev-wallet custody story, treasury-owned routing, separated reward buckets, and visible claim/status flows.
               </p>

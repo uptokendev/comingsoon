@@ -173,7 +173,7 @@
   `
 
   const replacements = new Map([
-    ['The page should say what serious users need to hear.', 'Built to fight the usual launchpad games.'],
+    ['Rug culture gets no home field here.', 'Built to fight the usual launchpad games.'],
     ['The trust section keeps the copy simple: no dev-wallet custody story, treasury-owned routing, separated reward buckets, and visible claim/status flows.', 'MemeWarzone is built around treasury-owned routing, separated reward buckets, visible claim states, and anti-abuse rules that protect real activity.'],
     ['The page should make the incentive stack easy to understand: recruiters earn from linked activity, active squad members compete for Squad Pool rewards, and smaller active users can qualify for Warzone BNB Airdrops.', 'The incentive stack is simple on the surface: recruiters build the network, active squads fight for pooled upside, and smaller real users get a weekly shot through Warzone BNB Airdrops.'],
     ['The Coming Soon page now explains the whole battlefield without burying visitors in contract language. New users should instantly understand where they fit before they sign up.', 'Choose your lane before the gates open. Creators prepare campaigns, recruiters build squads, and traders join the first wave.'],
