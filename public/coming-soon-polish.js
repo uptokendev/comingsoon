@@ -151,7 +151,7 @@
       font-size: 13px;
     }
 
-    .cta[aria-label="MemeWarzone social links"] {
+    .footer-links {
       display: none !important;
     }
 
