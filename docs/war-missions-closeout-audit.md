@@ -14,7 +14,7 @@ Implemented in repo:
 - Wallet nonce/signature auth, nonce expiry/reuse protection, profile creation, banned-user checks, and Take the Oath XP award.
 - Supabase schema, full import SQL, seed categories, quest templates, quest instances, badge catalog, quiz questions, prize tables, rate-limit events, verification logs, and duplicate-submission fingerprints.
 - SQL import seed JSONB now uses validated dollar-quoted JSON blocks; `supabase/war_missions_full_import.sql` was regenerated from the current migration plus seed and checked for the previous `visible` wording/import issue.
-- Wallet connect now uses the same injected-wallet flow as the current MemeBattles frontend in the main coming-soon app and quests app: MetaMask/Rabby, Binance Wallet, or another BSC-compatible injected EVM wallet before signing.
+- Wallet connect now uses the same injected-wallet flow as the current MemeWarzone frontend in the main coming-soon app and quests app: MetaMask/Rabby, Binance Wallet, or another BSC-compatible injected EVM wallet before signing.
 - Period-aware quest instance generation for daily/weekly/season/once quests, plus a scheduled daily rollover function.
 - Quest submissions with status flow, caps, cooldowns, duplicate guards, XP ledger award/revoke, daily XP cap, daily progress, streak updates, and complete-all daily bonus.
 - Manual social linking, uniqueness enforcement, verification logs, X proof parsing, ownership warnings, required-term checks, metric snapshots, admin social recheck, deleted/unavailable post revocation, and Black Market highest-tier-only enforcement.
@@ -37,7 +37,7 @@ Remaining launch blockers:
 | Section | Status | Repo Evidence | Remaining Work |
 | --- | --- | --- | --- |
 | A. Product | Mostly Done | War Missions page, categories, seeded quests, XP, statuses, badges, streak stat, reset countdown, leaderboard, rewards panel. | Live profile/rank/streak validation after Supabase import. |
-| B. Wallet/Auth | Mostly Done | `wm-auth-nonce`, `wm-auth-verify`, `wm-profile`; nonce expiry/reuse; banned-user checks; admin role or allowlist recognition; MemeBattles-style injected wallet selection for MetaMask/Rabby, Binance Wallet, or another BSC-compatible EVM wallet. | Live wallet/Supabase smoke test with MetaMask/Rabby/Binance or target production wallets. |
+| B. Wallet/Auth | Mostly Done | `wm-auth-nonce`, `wm-auth-verify`, `wm-profile`; nonce expiry/reuse; banned-user checks; admin role or allowlist recognition; MemeWarzone-style injected wallet selection for MetaMask/Rabby, Binance Wallet, or another BSC-compatible EVM wallet. | Live wallet/Supabase smoke test with MetaMask/Rabby/Binance or target production wallets. |
 | C. Supabase | Mostly Done | Full import, migrations, seed data, RLS enabled, public read policies, audit log, verification logs, rate limits, fingerprints, validated JSONB seed blocks. | Generated DB types and live migration/import test. |
 | D. Quest Engine | Mostly Done | `wm-quests-submit`, period-aware instances, daily/weekly rotation, caps, cooldowns, XP ledger, reject/revoke/expire flow. | Live clock/cron validation in Netlify/Supabase. |
 | E. Social Verification | Manual Fallback Ready | Social link uniqueness, X URL parsing, ownership warnings, required-term checks, metric snapshots, admin social recheck, verification logs. | Live X/Telegram/Discord provider verification with credentials/bots. |

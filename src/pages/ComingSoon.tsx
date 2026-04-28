@@ -8,7 +8,7 @@ import { captureReferralVisit, fetchReferralStatus, getStoredReferralCode, norma
 import { connectWallet } from '../lib/wallet'
 
 const X_URL = (import.meta.env.VITE_X_URL as string) || 'https://x.com/MemeWarzoneHQ'
-const TG_URL = (import.meta.env.VITE_TELEGRAM_URL as string) || 'https://t.me/'
+const TG_URL = (import.meta.env.VITE_TELEGRAM_URL as string) || 'https://t.me/memewarzonehq'
 const DC_URL = (import.meta.env.VITE_DISCORD_URL as string) || 'https://discord.gg/T7Sp6nSM'
 const DOCS_URL = (import.meta.env.VITE_DOCS_URL as string) || 'https://docs.memewar.zone'
 const STATUS = (import.meta.env.VITE_STATUS_TEXT as string) || ''
@@ -59,6 +59,31 @@ const warRoomStyles = `
 .war-room-shell {
   width: min(1180px, 100%);
   margin: 0 auto;
+}
+
+.launch-banner {
+  margin: 0 auto 18px;
+  padding: 13px 16px;
+  border: 1px solid rgba(246, 211, 124, 0.24);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.5);
+  color: rgba(255, 247, 235, 0.82);
+  text-align: center;
+  line-height: 1.45;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.26);
+  backdrop-filter: blur(12px);
+}
+
+.launch-banner strong {
+  color: rgba(246, 211, 124, 0.98);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.top__pill--coming-soon {
+  border-color: rgba(246, 211, 124, 0.32);
+  color: rgba(246, 211, 124, 0.96);
+  background: rgba(0, 0, 0, 0.62);
 }
 
 .war-hero {
@@ -830,14 +855,17 @@ export default function ComingSoon() {
           <a href="#rewards">Rewards</a>
           <button type="button" onClick={scrollToRecruiter}>Recruiters</button>
         </nav>
-        <div className="top__pill">Prepare Mode • Squads forming</div>
+        <div className="top__pill top__pill--coming-soon">Coming Soon - Prepare Mode</div>
       </header>
 
       <main className="main main--war-room">
         <div className="war-room-shell">
+          <div className="launch-banner" role="status">
+            <strong>Coming soon.</strong> MemeWarzone is not live yet. Recruiters and squads are forming before launch.
+          </div>
           <section className="war-hero" aria-labelledby="war-hero-title">
             <div className="war-hero__copy">
-              <div className="badge">⚔️ Prepare Mode War Room</div>
+              <div className="badge">Coming soon - Prepare Mode War Room</div>
               <h1 className="h1" id="war-hero-title">
                 The meme launchpad built like a <span className="h1__accent">Warzone</span>
               </h1>
