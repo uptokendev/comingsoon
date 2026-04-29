@@ -33,8 +33,8 @@ function injectPartnerStyles() {
 
     .partner-card__image-wrap {
       position: relative;
-      width: 250px;
-      height: 250px;
+      width: 200px;
+      height: 200px;
       min-height: 250px;
       background: radial-gradient(circle at 50% 28%, rgba(246, 211, 124, 0.18), rgba(0, 0, 0, 0.92) 62%);
       overflow: hidden;
