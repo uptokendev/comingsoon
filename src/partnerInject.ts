@@ -11,9 +11,9 @@ function injectPartnerStyles() {
   style.textContent = `
     .partner-card {
       margin-top: 18px;
-      width: min(760px, 100%);
+      width: min(820px, 100%);
       display: grid;
-      grid-template-columns: 132px minmax(0, 1fr);
+      grid-template-columns: 250px minmax(0, 1fr);
       align-items: stretch;
       overflow: hidden;
       border-radius: 22px;
@@ -33,16 +33,21 @@ function injectPartnerStyles() {
 
     .partner-card__image-wrap {
       position: relative;
-      min-height: 132px;
+      width: 250px;
+      height: 250px;
+      min-height: 250px;
       background: radial-gradient(circle at 50% 28%, rgba(246, 211, 124, 0.18), rgba(0, 0, 0, 0.92) 62%);
       overflow: hidden;
     }
 
     .partner-card__image {
-      width: 100%;
-      height: 100%;
+      position: relative;
+      z-index: 1;
+      width: 250px;
+      height: 250px;
       display: block;
-      object-fit: cover;
+      object-fit: contain;
+      object-position: center;
     }
 
     .partner-card__fallback {
@@ -61,7 +66,7 @@ function injectPartnerStyles() {
     }
 
     .partner-card__content {
-      padding: 18px 18px 16px;
+      padding: 22px 22px 20px;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -96,11 +101,15 @@ function injectPartnerStyles() {
     @media (max-width: 640px) {
       .partner-card {
         grid-template-columns: 1fr;
+        width: min(360px, 100%);
         text-align: center;
       }
 
       .partner-card__image-wrap {
-        min-height: 190px;
+        width: 250px;
+        height: 250px;
+        min-height: 250px;
+        justify-self: center;
       }
 
       .partner-card__content {
