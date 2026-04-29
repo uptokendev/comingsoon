@@ -1,6 +1,7 @@
 const PARTNER_CARD_ID = 'mwz-crypticpump-partner-card'
 const PARTNER_STYLE_ID = 'mwz-crypticpump-partner-style'
 const CRYPTIC_PUMP_URL = 'https://CrypticPump.com'
+const CRYPTIC_PUMP_IMAGE = '/crypicpump.jpg'
 
 function injectPartnerStyles() {
   if (document.getElementById(PARTNER_STYLE_ID)) return
@@ -122,7 +123,7 @@ function buildPartnerCard() {
   card.innerHTML = `
     <div class="partner-card__image-wrap">
       <div class="partner-card__fallback">CrypticPump</div>
-      <img class="partner-card__image" src="/crypticpump.jpg" alt="CrypticPump" />
+      <img class="partner-card__image" src="${CRYPTIC_PUMP_IMAGE}" alt="CrypticPump" />
     </div>
     <div class="partner-card__content">
       <div class="partner-card__eyebrow">Official Partner</div>
