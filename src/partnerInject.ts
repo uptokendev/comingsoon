@@ -11,9 +11,9 @@ function injectPartnerStyles() {
   style.textContent = `
     .partner-card {
       margin-top: 18px;
-      width: min(820px, 100%);
+      width: min(760px, 100%);
       display: grid;
-      grid-template-columns: 250px minmax(0, 1fr);
+      grid-template-columns: 150px minmax(0, 1fr);
       align-items: stretch;
       overflow: hidden;
       border-radius: 22px;
@@ -33,9 +33,9 @@ function injectPartnerStyles() {
 
     .partner-card__image-wrap {
       position: relative;
-      width: 200px;
-      height: 200px;
-      min-height: 250px;
+      width: 150px;
+      height: 150px;
+      min-height: 150px;
       background: radial-gradient(circle at 50% 28%, rgba(246, 211, 124, 0.18), rgba(0, 0, 0, 0.92) 62%);
       overflow: hidden;
     }
@@ -43,8 +43,8 @@ function injectPartnerStyles() {
     .partner-card__image {
       position: relative;
       z-index: 1;
-      width: 250px;
-      height: 250px;
+      width: 150px;
+      height: 150px;
       display: block;
       object-fit: contain;
       object-position: center;
@@ -56,9 +56,9 @@ function injectPartnerStyles() {
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 16px;
+      padding: 12px;
       color: rgba(246, 211, 124, 0.92);
-      font-size: 18px;
+      font-size: 14px;
       font-weight: 900;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -66,7 +66,7 @@ function injectPartnerStyles() {
     }
 
     .partner-card__content {
-      padding: 22px 22px 20px;
+      padding: 18px 20px 16px;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -101,14 +101,14 @@ function injectPartnerStyles() {
     @media (max-width: 640px) {
       .partner-card {
         grid-template-columns: 1fr;
-        width: min(360px, 100%);
+        width: min(330px, 100%);
         text-align: center;
       }
 
       .partner-card__image-wrap {
-        width: 250px;
-        height: 250px;
-        min-height: 250px;
+        width: 150px;
+        height: 150px;
+        min-height: 150px;
         justify-self: center;
       }
 
