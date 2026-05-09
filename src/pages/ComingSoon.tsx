@@ -12,6 +12,26 @@ const TG_URL = (import.meta.env.VITE_TELEGRAM_URL as string) || 'https://t.me/'
 const DC_URL = (import.meta.env.VITE_DISCORD_URL as string) || 'https://discord.gg/T7Sp6nSM'
 const DOCS_URL = (import.meta.env.VITE_DOCS_URL as string) || 'https://docs.memewar.zone'
 const STATUS = (import.meta.env.VITE_STATUS_TEXT as string) || ''
+const LAUNCH_TARGET_MS = Date.parse('2026-05-12T20:00:00+02:00')
+const SECOND_MS = 1000
+const MINUTE_MS = 60 * SECOND_MS
+const HOUR_MS = 60 * MINUTE_MS
+const DAY_MS = 24 * HOUR_MS
+
+function getCountdownParts() {
+  const distance = Math.max(0, LAUNCH_TARGET_MS - Date.now())
+
+  return {
+    days: Math.floor(distance / DAY_MS),
+    hours: Math.floor((distance % DAY_MS) / HOUR_MS),
+    minutes: Math.floor((distance % HOUR_MS) / MINUTE_MS),
+    seconds: Math.floor((distance % MINUTE_MS) / SECOND_MS),
+  }
+}
+
+function formatTimerValue(value: number, pad = true) {
+  return pad ? String(value).padStart(2, '0') : String(value)
+}
 
 function IconDocs() {
   return (
@@ -56,6 +76,7 @@ export default function ComingSoon() {
   const [referralMessage, setReferralMessage] = useState('')
   const [checkingReferral, setCheckingReferral] = useState(true)
   const [referralGateDismissed, setReferralGateDismissed] = useState(false)
+  const [countdown, setCountdown] = useState(getCountdownParts)
   const location = useLocation()
   const navigate = useNavigate()
   const referralMatch = useMatch('/r/:code')
@@ -67,6 +88,13 @@ export default function ComingSoon() {
   }, [location.search, pathReferralCode])
 
   const referralGateActive = !referralGateDismissed && Boolean(referralCodeHint || referralStatus.hasReferral)
+
+  useEffect(() => {
+    const tick = () => setCountdown(getCountdownParts())
+    tick()
+    const timer = window.setInterval(tick, 1000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -193,6 +221,13 @@ export default function ComingSoon() {
     }
   }
 
+  const countdownItems = [
+    { label: 'Days', value: countdown.days, pad: false },
+    { label: 'Hours', value: countdown.hours, pad: true },
+    { label: 'Minutes', value: countdown.minutes, pad: true },
+    { label: 'Seconds', value: countdown.seconds, pad: true },
+  ]
+
   return (
     <div className={`page ${referralGateActive ? 'page--referral-focus' : ''}`.trim()}>
       <div className="page__bg" aria-hidden="true" />
@@ -223,6 +258,83 @@ export default function ComingSoon() {
             A creator-first meme launchpad where every launch becomes a competition — UpVotes drive discovery and on-chain
             leagues turn launches into repeatable events.
           </p>
+
+          <div
+            aria-label="Countdown to May 12, 2026 at 20:00 CEST"
+            style={{
+              marginTop: '28px',
+              width: 'min(900px, 100%)',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+              gap: 'clamp(8px, 1.8vw, 16px)',
+            }}
+          >
+            {countdownItems.map((item) => (
+              <div
+                key={item.label}
+                style={{
+                  padding: 'clamp(14px, 2.4vw, 26px) clamp(10px, 2vw, 20px)',
+                  borderRadius: '22px',
+                  border: '1px solid rgba(246, 211, 124, 0.24)',
+                  background: 'linear-gradient(180deg, rgba(18, 14, 16, 0.86), rgba(8, 8, 10, 0.68))',
+                  boxShadow: '0 20px 80px rgba(0, 0, 0, 0.42), 0 0 42px rgba(255, 122, 31, 0.08)',
+                  backdropFilter: 'blur(12px)',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 'clamp(34px, 8vw, 92px)',
+                    lineHeight: 0.9,
+                    fontWeight: 900,
+                    letterSpacing: '-0.06em',
+                    color: 'rgba(255, 247, 235, 0.98)',
+                    textShadow: '0 0 30px rgba(255, 155, 47, 0.26)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {formatTimerValue(item.value, item.pad)}
+                </div>
+                <div
+                  style={{
+                    marginTop: '10px',
+                    fontSize: 'clamp(10px, 1.5vw, 13px)',
+                    fontWeight: 800,
+                    letterSpacing: '0.16em',
+                    textTransform: 'uppercase',
+                    color: 'rgba(246, 211, 124, 0.82)',
+                  }}
+                >
+                  {item.label}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div
+            style={{
+              marginTop: '18px',
+              fontSize: 'clamp(24px, 4vw, 46px)',
+              lineHeight: 1.08,
+              fontWeight: 900,
+              letterSpacing: '-0.03em',
+              color: 'rgba(255, 247, 235, 0.96)',
+              textShadow: '0 0 32px rgba(255, 155, 47, 0.18)',
+            }}
+          >
+            MemeWarzone is coming soon
+          </div>
+          <div
+            style={{
+              marginTop: '8px',
+              fontSize: '13px',
+              fontWeight: 800,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              color: 'rgba(246, 211, 124, 0.78)',
+            }}
+          >
+            May 12 • 20:00u CEST
+          </div>
 
           <div className="hero-callout">
             <div className="hero-callout__title">Recruiters wanted</div>
