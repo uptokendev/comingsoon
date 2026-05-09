@@ -321,7 +321,6 @@ export default function ComingSoon() {
               textShadow: '0 0 32px rgba(255, 155, 47, 0.18)',
             }}
           >
-            MemeWarzone is coming soon
           </div>
           <div
             style={{
